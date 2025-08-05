@@ -99,21 +99,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add click handlers for action buttons (placeholder for future functionality)
+    // Add click handlers for feature cards
+    document.querySelectorAll('.feature-card.clickable-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+    
+    // Add click handlers for action buttons
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const action = this.classList.contains('edit-btn') ? 'edit' : 'delete';
-            const taskId = this.closest('tr').dataset.taskId;
+            e.stopPropagation();
             
-            if (action === 'delete') {
-                if (confirm('Are you sure you want to delete this task?')) {
-                    // TODO: Implement delete functionality
-                    console.log('Delete task:', taskId);
-                }
-            } else {
-                // TODO: Implement edit functionality
-                console.log('Edit task:', taskId);
+            if (this.classList.contains('edit-btn')) {
+                // Handle edit button
+                const taskId = this.getAttribute('data-task-id');
+                const taskUrl = this.getAttribute('data-task-url');
+                const taskSchedule = this.getAttribute('data-task-schedule');
+                const taskStatus = this.getAttribute('data-task-status');
+                
+                openEditModal(taskId, taskUrl, taskSchedule, taskStatus);
+            } else if (this.classList.contains('delete-btn')) {
+                // Handle delete button
+                const taskId = this.getAttribute('data-task-id');
+                confirmDelete(taskId, e);
             }
         });
     });

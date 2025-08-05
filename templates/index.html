@@ -73,21 +73,21 @@
             </div>
 
             <div class="features">
-                                        <div class="feature-card clickable-card" onclick="window.location.href='{{ url_for('integrated_apps') }}';">
-                            <i class="fas fa-plug"></i>
-                            <h3>Integrated Apps</h3>
-                            <p>Connect with Google Drive, N8N & more for seamless workflow</p>
-                        </div>
-                                    <div class="feature-card clickable-card" onclick="window.location.href='{{ url_for('latest_updates') }}';">
-                <i class="fas fa-bell"></i>
-                <h3>Latest Updates</h3>
-                <p>Stay informed with real-time scraping notifications</p>
-            </div>
-                        <div class="feature-card clickable-card" onclick="window.location.href='{{ url_for('tasks') }}';">
-                            <i class="fas fa-chart-line"></i>
-                            <h3>Dashboard</h3>
-                            <p>Track your tasks</p>
-                        </div>
+                <div class="feature-card clickable-card" data-url="{{ url_for('integrated_apps') }}">
+                    <i class="fas fa-plug"></i>
+                    <h3>Integrated Apps</h3>
+                    <p>Connect with Google Drive, N8N & more for seamless workflow</p>
+                </div>
+                <div class="feature-card clickable-card" data-url="{{ url_for('latest_updates') }}">
+                    <i class="fas fa-bell"></i>
+                    <h3>Latest Updates</h3>
+                    <p>Stay informed with real-time scraping notifications</p>
+                </div>
+                <div class="feature-card clickable-card" data-url="{{ url_for('tasks') }}">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Dashboard</h3>
+                    <p>Track your tasks</p>
+                </div>
             </div>
         </main>
 
