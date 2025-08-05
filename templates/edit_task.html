@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Task - AI Web Scraper</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/edit_task.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container edit-task-page">
+        <header class="header">
+            <h1><i class="fas fa-edit"></i> Edit AI Scraping Task</h1>
+            <p>Modify your task schedule and status</p>
+        </header>
+
+        <main class="main-content">
+            <div class="edit-container">
+                <div class="edit-header">
+                    <h2>Edit Task #{{ task[0] }}</h2>
+                    <a href="{{ url_for('tasks') }}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i> Back to Tasks
+                    </a>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="task-info">
+                    <div class="info-item">
+                        <label><i class="fas fa-link"></i> Website URL:</label>
+                        <span class="url-display">{{ task[1] }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label><i class="fas fa-calendar"></i> Created:</label>
+                        <span>{{ task[3][:10] if task[3] else 'N/A' }}</span>
+                    </div>
+                </div>
+
+                <form action="{{ url_for('edit_task', task_id=task[0]) }}" method="POST" class="edit-form">
+                    <div class="form-group">
+                        <label for="schedule">
+                            <i class="fas fa-clock"></i> AI Scraping Schedule
+                        </label>
+                        <select id="schedule" name="schedule" required class="form-input">
+                            <option value="daily" {% if task[2] == 'daily' %}selected{% endif %}>Every Day</option>
+                            <option value="2days" {% if task[2] == '2days' %}selected{% endif %}>Every 2 Days</option>
+                            <option value="weekly" {% if task[2] == 'weekly' %}selected{% endif %}>Every Week</option>
+                            <option value="monthly" {% if task[2] == 'monthly' %}selected{% endif %}>Every Month</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">
+                            <i class="fas fa-toggle-on"></i> Task Status
+                        </label>
+                        <select id="status" name="status" required class="form-input">
+                            <option value="active" {% if task[5] == 'active' %}selected{% endif %}>Active</option>
+                            <option value="paused" {% if task[5] == 'paused' %}selected{% endif %}>Paused</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="update-btn">
+                            <i class="fas fa-save"></i> Update Task
+                        </button>
+                        <a href="{{ url_for('tasks') }}" class="cancel-btn">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <a href="{{ url_for('tasks') }}" class="view-tasks-btn">
+                <i class="fas fa-list"></i> Back to Tasks
+            </a>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

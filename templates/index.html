@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Web Scraper</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-robot"></i> AI Web Scraper</h1>
+            <p>Intelligent automated web scraper powered by Complyance</p>
+        </header>
+
+        <main class="main-content">
+            <div class="form-container">
+                <h2>Add New AI Scraping Task</h2>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('add_task') }}" method="POST" class="scraping-form">
+                    <div class="form-group">
+                        <label for="url">
+                            <i class="fas fa-link"></i> Website URL
+                        </label>
+                        <input 
+                            type="url" 
+                            id="url" 
+                            name="url" 
+                            placeholder="https://example.com"
+                            required
+                            class="form-input"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="schedule">
+                            <i class="fas fa-clock"></i> AI Scraping Schedule
+                        </label>
+                        <select id="schedule" name="schedule" required class="form-input">
+                            <option value="">Select frequency</option>
+                            <option value="daily">Every Day</option>
+                            <option value="2days">Every 2 Days</option>
+                            <option value="weekly">Every Week</option>
+                            <option value="monthly">Every Month</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-plus"></i> Add Task
+                    </button>
+                </form>
+                
+                <div class="status-controls">
+                    <h3>AI Scraper Status</h3>
+                    <div class="status-toggle">
+                        <button class="toggle-btn" id="statusToggle" onclick="toggleStatus();">
+                            <i class="fas fa-play-circle"></i> <span id="statusText">Active</span>
+                        </button>
+                    </div>
+                    <p class="status-info">Click to toggle: Active = AI scraper runs | Inactive = AI scraper on rest</p>
+                </div>
+            </div>
+
+            <div class="features">
+                                        <div class="feature-card clickable-card" onclick="window.location.href='{{ url_for('integrated_apps') }}';">
+                            <i class="fas fa-plug"></i>
+                            <h3>Integrated Apps</h3>
+                            <p>Connect with Google Drive, N8N & more for seamless workflow</p>
+                        </div>
+                                    <div class="feature-card">
+                <i class="fas fa-bell"></i>
+                <h3>Latest Updates</h3>
+                <p>Stay informed with real-time scraping notifications</p>
+            </div>
+                        <div class="feature-card clickable-card" onclick="window.location.href='{{ url_for('tasks') }}';">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Dashboard</h3>
+                            <p>Track your tasks</p>
+                        </div>
+            </div>
+        </main>
+
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Web Scraper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="analytics-layout">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
+                </a>
+                <a href="{{ url_for('tasks') }}" class="nav-item active">
+                    <i class="fas fa-list"></i>
+                </a>
+                <a href="{{ url_for('integrated_apps') }}" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Log out
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Analytics Content -->
+            <div class="analytics-content">
+                <div class="analytics-header">
+                    <h1>Your AI Tasks</h1>
+                    <div class="search-container">
+                        <input type="text" placeholder="Search tasks" class="search-input">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+
+                <div class="tasks-table-container">
+                    {% if tasks %}
+                        <table class="tasks-table">
+                            <thead>
+                                <tr>
+                                    <th>URL</th>
+                                    <th>Schedule</th>
+                                    <th>Created</th>
+                                    <th>Last Run</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>
+                                        <div class="url-cell">
+                                            <i class="fas fa-external-link-alt"></i>
+                                            <span>{{ task[1][:50] }}{% if task[1]|length > 50 %}...{% endif %}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="schedule-badge {% if task[2] == 'daily' %}daily{% elif task[2] == 'weekly' %}weekly{% elif task[2] == 'monthly' %}monthly{% else %}daily{% endif %}">
+                                            <i class="fas fa-calendar"></i>
+                                            {% if task[2] == 'daily' %}
+                                                Daily
+                                            {% elif task[2] == '2days' %}
+                                                Every 2 Days
+                                            {% elif task[2] == 'weekly' %}
+                                                Weekly
+                                            {% elif task[2] == 'monthly' %}
+                                                Monthly
+                                            {% else %}
+                                                {{ task[2] }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ task[3][:10] if task[3] else 'N/A' }}</td>
+                                    <td>{{ task[4][:10] if task[4] else 'Never' }}</td>
+                                    <td>
+                                        <span class="status-badge {% if task[5] == 'active' %}active{% else %}paused{% endif %}">
+                                            <i class="fas fa-{% if task[5] == 'active' %}play{% else %}pause{% endif %}"></i>
+                                            {% if task[5] == 'active' %}
+                                                Active
+                                            {% else %}
+                                                Paused
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="actions-cell">
+                                            <button class="action-btn edit-btn" title="Edit" onclick="openEditModal({{ task[0] }}, '{{ task[1] }}', '{{ task[2] }}', '{{ task[5] }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="action-btn delete-btn" title="Delete" onclick="return confirmDelete({{ task[0] }}, event)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-robot"></i>
+                            <h3>Track your tasks</h3>
+                            <p>You haven't created any AI scraping tasks yet.</p>
+                            <a href="{{ url_for('index') }}" class="cta-btn">
+                                <i class="fas fa-plus"></i> Create Your First AI Task
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit AI Scraping Task</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="task-info">
+                    <div class="info-item">
+                        <label><i class="fas fa-link"></i> Website URL:</label>
+                        <span id="modalUrl" class="url-display"></span>
+                    </div>
+                </div>
+                <form id="editForm" class="edit-form">
+                    <input type="hidden" id="editTaskId" name="task_id">
+                    <div class="form-group">
+                        <label for="editSchedule">
+                            <i class="fas fa-clock"></i> AI Scraping Schedule
+                        </label>
+                        <select id="editSchedule" name="schedule" required class="form-input">
+                            <option value="daily">Every Day</option>
+                            <option value="2days">Every 2 Days</option>
+                            <option value="weekly">Every Week</option>
+                            <option value="monthly">Every Month</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">
+                            <i class="fas fa-toggle-on"></i> Task Status
+                        </label>
+                        <select id="editStatus" name="status" required class="form-input">
+                            <option value="active">Active</option>
+                            <option value="paused">Paused</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="update-btn" onclick="saveTaskChanges()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trash"></i> Delete Task</h2>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this task?</p>
+                <p class="delete-url" id="deleteUrl"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="delete-btn" onclick="deleteTask()">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

@@ -1,0 +1,445 @@
+/* Analytics Dashboard Styles */
+
+/* Layout */
+.analytics-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 80px;
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+}
+
+.sidebar-header {
+    margin-bottom: 40px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+}
+
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.nav-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8a8a8a;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.nav-item.active {
+    background: #667eea;
+    color: white;
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 0 2px 2px 0;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-bottom: 20px;
+}
+
+.logout-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8a8a8a;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 12px;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 80px;
+    display: flex;
+    background: white;
+}
+
+/* Analytics Content */
+.analytics-content {
+    flex: 1;
+    padding: 30px;
+}
+
+.analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.analytics-header h1 {
+    color: #333;
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 40px 12px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 14px;
+}
+
+/* Tasks Table Container */
+.tasks-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.tasks-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tasks-table th {
+    background: #f8f9fa;
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tasks-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.tasks-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* App Info Styles */
+.app-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* App-specific icon colors */
+.app-icon.webhook {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+}
+
+.app-icon.n8n {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+}
+
+.app-icon.google-drive {
+    background: linear-gradient(135deg, #4285f4, #34a853);
+}
+
+.app-icon.google-sheets {
+    background: linear-gradient(135deg, #0f9d58, #4285f4);
+}
+
+.app-icon.airtable {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+}
+
+.app-icon.teams {
+    background: linear-gradient(135deg, #6264a7, #464775);
+}
+
+.app-icon.linkedin {
+    background: linear-gradient(135deg, #0077b5, #00a0dc);
+}
+
+/* Status Badge */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.paused {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Action Buttons */
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    font-size: 12px;
+}
+
+.edit-btn {
+    background: #007bff;
+    color: white;
+}
+
+.edit-btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+/* URL Column */
+.url-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.url-link {
+    color: #007bff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.url-link:hover {
+    text-decoration: underline;
+}
+
+.url-link i {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Schedule Badge */
+.schedule-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.schedule-badge.monthly {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.schedule-badge.daily {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.schedule-badge.weekly {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .analytics-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        flex-direction: row;
+        padding: 15px 20px;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        gap: 15px;
+    }
+
+    .sidebar-footer {
+        margin-top: 0;
+        margin-left: auto;
+        padding-bottom: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        flex-direction: column;
+    }
+
+    .analytics-content {
+        padding: 20px;
+    }
+
+    .analytics-header {
+        flex-direction: column;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .search-container {
+        width: 100%;
+    }
+
+    .tasks-table {
+        font-size: 12px;
+    }
+
+    .tasks-table th,
+    .tasks-table td {
+        padding: 12px 8px;
+    }
+
+    .url-cell {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        padding: 10px 15px;
+    }
+
+    .nav-item {
+        width: 35px;
+        height: 35px;
+    }
+
+    .logo {
+        width: 35px;
+        height: 35px;
+    }
+
+    .analytics-content {
+        padding: 15px;
+    }
+
+    .app-info {
+        gap: 8px;
+    }
+
+    .app-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+} 

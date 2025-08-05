@@ -1,0 +1,319 @@
+/* Integrated Apps Page - HeyReach Style */
+
+/* Layout */
+.integrated-apps-layout {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 80px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+}
+
+.sidebar-header {
+    margin-bottom: 40px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+}
+
+.nav-item {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a0a0a0;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.nav-item i {
+    font-size: 18px;
+}
+
+.sidebar-footer {
+    padding: 20px 0;
+}
+
+.logout-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #a0a0a0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 10px;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.logout-btn i {
+    font-size: 16px;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 80px;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+/* Integrations Content */
+.integrations-content {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.integrations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.integrations-header h1 {
+    color: #2c3e50;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    min-width: 300px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 20px 12px 50px;
+    border: 2px solid #e1e8ed;
+    border-radius: 25px;
+    font-size: 16px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Integrations List */
+.integrations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.integration-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #e1e8ed;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.integration-item:last-child {
+    border-bottom: none;
+}
+
+.integration-item:hover {
+    background: #f8f9fa;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+}
+
+.integration-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.integration-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+/* App-specific icon colors */
+.integration-icon.webhook {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+}
+
+.integration-icon.n8n {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+}
+
+.integration-icon.google-drive {
+    background: linear-gradient(135deg, #4285f4, #34a853);
+}
+
+.integration-icon.google-sheets {
+    background: linear-gradient(135deg, #0f9d58, #4285f4);
+}
+
+.integration-icon.airtable {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+}
+
+.integration-icon.teams {
+    background: linear-gradient(135deg, #6264a7, #464775);
+}
+
+.integration-icon.linkedin {
+    background: linear-gradient(135deg, #0077b5, #00a0dc);
+}
+
+.integration-details h3 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.integration-details p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Connect Button */
+.connect-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.connect-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.connect-btn.connected {
+    background: #28a745;
+}
+
+.connect-btn.connected:hover {
+    background: #218838;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .integrations-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-container {
+        min-width: auto;
+    }
+    
+    .integration-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .connect-btn {
+        align-self: flex-end;
+    }
+    
+    .main-content {
+        padding: 20px;
+    }
+    
+    .integrations-content {
+        padding: 20px;
+    }
+} 
