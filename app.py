@@ -124,6 +124,13 @@ def delete_task(task_id):
 def integrated_apps():
     return render_template('integrated_apps.html')
 
+@app.route('/latest_updates')
+def latest_updates():
+    # For now, we'll return an empty list of updates
+    # You can later connect this to your actual updates data
+    updates = []
+    return render_template('latest_updates.html', updates=updates)
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host='0.0.0.0', port=8080) 

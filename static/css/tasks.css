@@ -667,4 +667,59 @@
         height: 28px;
         font-size: 12px;
     }
+}
+
+/* Empty table message styles */
+.empty-table-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.empty-table-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.empty-table-content span {
+    font-size: 14px;
+    color: #8a8a8a;
+}
+
+/* Update specific styles */
+.update-number-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.update-number-cell i {
+    color: #667eea;
+    font-size: 12px;
+}
+
+.link-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.update-link {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.update-link:hover {
+    color: #5a6fd8;
+    text-decoration: underline;
+}
+
+.link-cell i {
+    color: #8a8a8a;
+    font-size: 12px;
 } 
