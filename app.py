@@ -86,49 +86,27 @@ def api_tasks():
     
     return jsonify(task_list)
 
-@app.route('/edit_task/<int:task_id>', methods=['GET', 'POST'])
+@app.route('/edit_task/<int:task_id>', methods=['POST'])
 def edit_task(task_id):
-    if request.method == 'GET':
+    schedule = request.form.get('schedule')
+    status = request.form.get('status')
+    
+    if not schedule or not status:
+        return jsonify({'success': False, 'message': 'Please fill in all fields'}), 400
+    
+    try:
         conn = sqlite3.connect('scraping_scheduler.db')
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM scraping_tasks WHERE id = ?', (task_id,))
-        task = cursor.fetchone()
+        cursor.execute('''
+            UPDATE scraping_tasks 
+            SET schedule = ?, status = ?
+            WHERE id = ?
+        ''', (schedule, status, task_id))
+        conn.commit()
         conn.close()
-        
-        if task:
-            return render_template('edit_task.html', task=task)
-        else:
-            flash('Task not found', 'error')
-            return redirect(url_for('tasks'))
-    
-    elif request.method == 'POST':
-        url = request.form.get('url')
-        schedule = request.form.get('schedule')
-        status = request.form.get('status')
-        
-        if not url or not schedule:
-            flash('Please fill in all fields', 'error')
-            return redirect(url_for('edit_task', task_id=task_id))
-        
-        # Basic URL validation
-        if not url.startswith(('http://', 'https://')):
-            url = 'https://' + url
-        
-        try:
-            conn = sqlite3.connect('scraping_scheduler.db')
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE scraping_tasks 
-                SET url = ?, schedule = ?, status = ?
-                WHERE id = ?
-            ''', (url, schedule, status, task_id))
-            conn.commit()
-            conn.close()
-            flash('Task updated successfully!', 'success')
-        except Exception as e:
-            flash('Error updating task. Please try again.', 'error')
-        
-        return redirect(url_for('tasks'))
+        return jsonify({'success': True, 'message': 'Task updated successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': 'Error updating task'}), 500
 
 @app.route('/delete_task/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
