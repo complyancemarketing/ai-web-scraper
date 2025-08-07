@@ -1,122 +1,142 @@
 # AI Web Scraper
 
-A modern web application for scheduling intelligent AI-powered web scraping tasks. Users can input URLs and set scraping schedules (daily, every 2 days, weekly, monthly) with a beautiful, responsive interface powered by artificial intelligence.
+An intelligent automated web scraper powered by Complyance that can extract and track the latest updates from websites.
 
 ## Features
 
-- 🤖 **AI-Powered Scraping**: Intelligent data extraction with machine learning
-- 📅 **Smart Scheduling**: AI-optimized scheduling for maximum efficiency
-- 📊 **Task Management**: View and manage all your AI scraping tasks
-- 🎨 **Modern UI**: Beautiful, responsive design with smooth animations
-- 📱 **Mobile Friendly**: Works perfectly on all devices
-- 💾 **Data Storage**: SQLite database for persistent task storage
+### 🚀 Immediate Scraping
+- **Scrape Now**: Click the "Start Scraping" button to immediately scrape any website for latest updates
+- **Real-time Results**: Get instant feedback on scraping progress and results
+- **Latest Updates Detection**: Automatically detects and stores the most recent updates from the last 5 days
 
-## Screenshots
+### 📊 Latest Updates Dashboard
+- **Update Tracking**: View all scraped updates in a clean, organized table
+- **Link Management**: Each update shows the page link with clickable URLs
+- **Date Tracking**: See when each update was scraped
+- **Duplicate Prevention**: Automatically prevents duplicate entries
 
-### Home Page
-- Clean, modern interface with gradient background
-- Simple form for adding new AI scraping tasks
-- Feature cards highlighting AI capabilities
+### 🔄 Scheduled Scraping
+- **Flexible Scheduling**: Set up scraping tasks with various frequencies:
+  - Scrape Now (immediate)
+  - Daily
+  - Every 2 Days
+  - Weekly
+  - Monthly
+- **Task Management**: Edit, delete, and monitor scheduled tasks
 
-### Tasks Page
-- Table view of all AI scraping tasks
-- Status indicators and schedule badges
-- Action buttons for editing/deleting tasks
+### 🎨 Modern UI
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Real-time Feedback**: Loading spinners and status indicators
+- **Clean Interface**: Intuitive navigation with sidebar menu
 
 ## Installation
 
-1. **Clone the repository**
+1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd web-scraping-scheduler
+   cd ai-web-scraper
    ```
 
-2. **Install Python dependencies**
+2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the application**
+3. **Run the application**:
    ```bash
    python app.py
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:5000`
+4. **Access the application**:
+   Open your browser and go to `http://localhost:8080`
 
 ## Usage
 
-### Adding a New AI Task
-1. Enter the website URL you want to scrape
-2. Select the AI scraping frequency (daily, every 2 days, weekly, monthly)
-3. Click "Add Task" to schedule the AI scraping
+### Immediate Scraping
 
-### Viewing Tasks
-- Click "View All Tasks" to see all AI scraping tasks
-- Each task shows the URL, schedule, creation date, last run time, and status
+1. **Enter a URL**: In the main form, enter the website URL you want to scrape
+2. **Click "Start Scraping"**: The system will immediately begin scraping the website
+3. **View Results**: After scraping completes, you'll be redirected to the Latest Updates page to see the results
 
-## Project Structure
+### Scheduled Scraping
 
+1. **Add a Task**: Enter a URL and select a schedule frequency
+2. **Manage Tasks**: Use the Dashboard to view, edit, or delete scheduled tasks
+3. **Monitor Progress**: Track the status and last run time of each task
+
+### Latest Updates
+
+- **View All Updates**: Navigate to the Latest Updates page to see all scraped content
+- **Click Links**: Each update shows a clickable link to the original page
+- **Search Updates**: Use the search functionality to find specific updates
+
+## Technical Details
+
+### Database Schema
+
+The application uses SQLite with two main tables:
+
+1. **scraping_tasks**: Stores scheduled scraping tasks
+2. **scraped_updates**: Stores the actual scraped content with deduplication
+
+### Scraping Algorithm
+
+The scraping function:
+- Extracts all links from the target website
+- Filters for same-domain links only
+- Detects recent updates using date patterns and keywords
+- Prevents duplicate entries using URL hashing
+- Stores updates with metadata (title, URL, timestamp)
+
+### Supported Date Formats
+
+The scraper can detect recent updates using various date formats:
+- MM/DD/YYYY
+- MM-DD-YYYY
+- YYYY-MM-DD
+- MM.DD.YYYY
+
+### Recent Update Detection
+
+The system identifies recent updates by:
+- Looking for date patterns in the last 5 days
+- Checking for keywords like "today", "yesterday", "recent", "new", "latest", "updated"
+- Analyzing link text and surrounding content
+
+## API Endpoints
+
+- `POST /scrape_now`: Immediate scraping endpoint
+- `GET /latest_updates`: View scraped updates
+- `GET /tasks`: View scheduled tasks
+- `POST /add_task`: Add new scheduled task
+- `POST /edit_task/<id>`: Edit existing task
+- `POST /delete_task/<id>`: Delete task
+
+## Dependencies
+
+- **Flask**: Web framework
+- **requests**: HTTP library for web scraping
+- **beautifulsoup4**: HTML parsing
+- **lxml**: XML/HTML parser
+- **APScheduler**: Task scheduling
+- **python-dateutil**: Date utilities
+
+## Testing
+
+Run the test script to verify functionality:
+
+```bash
+python test_scraping.py
 ```
-ai-web-scraper/
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── README.md             # Project documentation
-├── templates/            # HTML templates
-│   ├── index.html       # Home page
-│   └── tasks.html       # Tasks page
-└── static/              # Static files
-    ├── css/
-    │   ├── style.css    # Main styles
-    │   └── tasks.css    # Tasks page styles
-    └── js/
-        └── script.js    # JavaScript functionality
-```
-
-## Technology Stack
-
-- **Backend**: Flask (Python)
-- **Database**: SQLite
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Styling**: Custom CSS with gradients and animations
-- **Icons**: Font Awesome
-
-## Database Schema
-
-```sql
-CREATE TABLE scraping_tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    url TEXT NOT NULL,
-    schedule TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_run TIMESTAMP,
-    status TEXT DEFAULT 'active'
-);
-```
-
-## Future Enhancements
-
-- [ ] **AI Scraping Engine**: Implement intelligent data extraction with ML
-- [ ] **Smart Task Scheduler**: Add AI-optimized scheduling with APScheduler
-- [ ] **Data Export**: Export scraped data in various formats
-- [ ] **User Authentication**: Add user accounts and login system
-- [ ] **Email Notifications**: Send notifications when AI scraping completes
-- [ ] **Advanced AI Scheduling**: Custom AI-powered scheduling options
-- [ ] **Data Visualization**: AI-driven charts and insights for scraped data
-- [ ] **API Endpoints**: RESTful API for external integrations
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-If you have any questions or need help, please open an issue on GitHub. 
+This project is licensed under the MIT License. 

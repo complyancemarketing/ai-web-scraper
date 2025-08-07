@@ -47,9 +47,15 @@
             <div class="analytics-content">
                 <div class="analytics-header">
                     <h1>Your Latest Updates</h1>
-                    <div class="search-container">
-                        <input type="text" placeholder="Search updates" class="search-input">
-                        <i class="fas fa-search search-icon"></i>
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <input type="text" placeholder="Search updates" class="search-input">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                        <button class="delete-all-updates-btn" onclick="showDeleteAllModal()">
+                            <i class="fas fa-trash-alt"></i>
+                            Delete All
+                        </button>
                     </div>
                 </div>
 
@@ -59,6 +65,8 @@
                             <tr>
                                 <th>Update Number</th>
                                 <th>Link</th>
+                                <th>Date</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,23 +83,70 @@
                                         <div class="link-cell">
                                             <i class="fas fa-external-link-alt"></i>
                                             <a href="{{ update[1] }}" target="_blank" class="update-link">
-                                                {{ update[1][:50] }}{% if update[1]|length > 50 %}...{% endif %}
+                                                {{ update[2] if update[2] else update[1][:50] }}{% if update[2] and update[2]|length > 50 %}...{% elif not update[2] and update[1]|length > 50 %}...{% endif %}
                                             </a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="date-cell">
+                                            <i class="fas fa-calendar"></i>
+                                            <span>{{ update[3] }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-cell">
+                                            <button class="delete-update-btn" onclick="deleteUpdate({{ update[0] }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="2" class="empty-table-message">
+                                    <td colspan="4" class="empty-table-message">
                                         <div class="empty-table-content">
-                                            <span>No updates available</span>
+                                            <span>No updates available. Start scraping to see results!</span>
                                         </div>
                                     </td>
                                 </tr>
                             {% endif %}
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Delete Update</h2>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this update?</p>
+                <div class="modal-actions">
+                    <button class="cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+                    <button class="delete-btn" onclick="confirmDeleteUpdate()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Modal -->
+    <div id="deleteAllModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Delete All Updates</h2>
+                <span class="close" onclick="closeDeleteAllModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete ALL updates? This action cannot be undone.</p>
+                <div class="modal-actions">
+                    <button class="cancel-btn" onclick="closeDeleteAllModal()">Cancel</button>
+                    <button class="delete-all-btn" onclick="confirmDeleteAllUpdates()">Delete All</button>
                 </div>
             </div>
         </div>

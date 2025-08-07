@@ -49,6 +49,7 @@
                         </label>
                         <select id="schedule" name="schedule" required class="form-input">
                             <option value="">Select frequency</option>
+                            <option value="scrape_now">Scrape Now</option>
                             <option value="daily">Every Day</option>
                             <option value="2days">Every 2 Days</option>
                             <option value="weekly">Every Week</option>
@@ -62,13 +63,17 @@
                 </form>
                 
                 <div class="status-controls">
-                    <h3>AI Scraper Status</h3>
+                    <h3>Start Scraping</h3>
                     <div class="status-toggle">
-                        <button class="toggle-btn" id="statusToggle" onclick="toggleStatus();">
-                            <i class="fas fa-play-circle"></i> <span id="statusText">Active</span>
+                        <button class="toggle-btn" id="scrapeNowBtn" onclick="scrapeNow();">
+                            <i class="fas fa-play-circle"></i> <span id="scrapeText">Start Scraping</span>
                         </button>
                     </div>
-                    <p class="status-info">Click to toggle: Active = AI scraper runs | Inactive = AI scraper on rest</p>
+                    <p class="status-info">Click to start scraping the entered URL for latest updates</p>
+                    <div id="scrapingStatus" class="scraping-status" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>Scraping in progress...</span>
+                    </div>
                 </div>
             </div>
 

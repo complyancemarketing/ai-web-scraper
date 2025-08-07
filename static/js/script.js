@@ -169,22 +169,22 @@ function toggleStatus() {
         // Switch to inactive
         toggleBtn.classList.remove('active');
         toggleBtn.classList.add('inactive');
-        statusText.textContent = 'Inactive';
+        statusText.textContent = 'Stop Scraping';
         icon.className = 'fas fa-pause-circle';
         
-        showAlert('⏸️ AI Scraper is now INACTIVE - Tasks are on rest', 'success');
+        showAlert('⏸️ AI Scraper is now STOPPED - Tasks are on rest', 'success');
         localStorage.setItem('aiScraperStatus', 'inactive');
-        console.log('AI Scraper Status: INACTIVE');
+        console.log('AI Scraper Status: STOPPED');
     } else {
         // Switch to active
         toggleBtn.classList.remove('inactive');
         toggleBtn.classList.add('active');
-        statusText.textContent = 'Active';
+        statusText.textContent = 'Start Scraping';
         icon.className = 'fas fa-play-circle';
         
-        showAlert('✅ AI Scraper is now ACTIVE - Tasks will run as per schedule', 'success');
+        showAlert('✅ AI Scraper is now STARTED - Tasks will run as per schedule', 'success');
         localStorage.setItem('aiScraperStatus', 'active');
-        console.log('AI Scraper Status: ACTIVE');
+        console.log('AI Scraper Status: STARTED');
     }
 }
 
@@ -197,11 +197,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (savedStatus === 'inactive') {
         toggleBtn.classList.add('inactive');
-        statusText.textContent = 'Inactive';
+        statusText.textContent = 'Stop Scraping';
         icon.className = 'fas fa-pause-circle';
     } else {
         toggleBtn.classList.add('active');
-        statusText.textContent = 'Active';
+        statusText.textContent = 'Start Scraping';
         icon.className = 'fas fa-play-circle';
     }
 });
@@ -331,12 +331,16 @@ function deleteTask() {
 window.onclick = function(event) {
     const editModal = document.getElementById('editModal');
     const deleteModal = document.getElementById('deleteModal');
+    const deleteAllModal = document.getElementById('deleteAllModal');
     
     if (event.target === editModal) {
         closeEditModal();
     }
     if (event.target === deleteModal) {
         closeDeleteModal();
+    }
+    if (event.target === deleteAllModal) {
+        closeDeleteAllModal();
     }
 }
 
@@ -352,3 +356,130 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 }); 
+
+// Scrape Now function
+function scrapeNow() {
+    const urlInput = document.getElementById('url');
+    const scrapeBtn = document.getElementById('scrapeNowBtn');
+    const scrapeText = document.getElementById('scrapeText');
+    const scrapingStatus = document.getElementById('scrapingStatus');
+    
+    if (!urlInput || !urlInput.value.trim()) {
+        showAlert('Please enter a URL to scrape', 'error');
+        return;
+    }
+    
+    // Show loading state
+    scrapeBtn.disabled = true;
+    scrapeText.textContent = 'Scraping...';
+    scrapingStatus.style.display = 'flex';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('url', urlInput.value.trim());
+    
+    // Send scraping request
+    fetch('/scrape_now', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(`✅ ${data.message}`, 'success');
+            if (data.updates_count > 0) {
+                // Redirect to latest updates page to show the results
+                setTimeout(() => {
+                    window.location.href = '/latest_updates';
+                }, 1500);
+            }
+        } else {
+            showAlert(`❌ ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('❌ Error during scraping. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        scrapeBtn.disabled = false;
+        scrapeText.textContent = 'Start Scraping';
+        scrapingStatus.style.display = 'none';
+    });
+} 
+
+// Global variables for delete modals
+let currentDeleteUpdateId = null;
+
+// Delete update function
+function deleteUpdate(updateId) {
+    currentDeleteUpdateId = updateId;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+// Show delete all modal
+function showDeleteAllModal() {
+    document.getElementById('deleteAllModal').style.display = 'block';
+}
+
+// Close delete modal
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    currentDeleteUpdateId = null;
+}
+
+// Close delete all modal
+function closeDeleteAllModal() {
+    document.getElementById('deleteAllModal').style.display = 'none';
+}
+
+// Confirm delete single update
+function confirmDeleteUpdate() {
+    if (!currentDeleteUpdateId) return;
+    
+    fetch(`/delete_update/${currentDeleteUpdateId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('✅ Update deleted successfully!', 'success');
+            closeDeleteModal();
+            // Reload the page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showAlert(`❌ ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('❌ Error deleting update. Please try again.', 'error');
+    });
+}
+
+// Confirm delete all updates
+function confirmDeleteAllUpdates() {
+    fetch('/delete_all_updates', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('✅ All updates deleted successfully!', 'success');
+            closeDeleteAllModal();
+            // Reload the page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showAlert(`❌ ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('❌ Error deleting all updates. Please try again.', 'error');
+    });
+} 
