@@ -14,11 +14,15 @@ function isValidUrl(string) {
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
-    alertDiv.textContent = message;
+    alertDiv.innerHTML = message;
     
+    // Try to find the best container to show the alert
     const formContainer = document.querySelector('.form-container');
-    if (formContainer) {
-        formContainer.insertBefore(alertDiv, formContainer.firstChild);
+    const analyticsContent = document.querySelector('.analytics-content');
+    const container = formContainer || analyticsContent || document.body;
+    
+    if (container) {
+        container.insertBefore(alertDiv, container.firstChild);
         
         // Remove alert after 5 seconds
         setTimeout(() => {
@@ -95,21 +99,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add click handlers for action buttons (placeholder for future functionality)
+    // Add click handlers for feature cards
+    document.querySelectorAll('.feature-card.clickable-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+    
+    // Add click handlers for action buttons
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const action = this.classList.contains('edit-btn') ? 'edit' : 'delete';
-            const taskId = this.closest('tr').dataset.taskId;
+            e.stopPropagation();
             
-            if (action === 'delete') {
-                if (confirm('Are you sure you want to delete this task?')) {
-                    // TODO: Implement delete functionality
-                    console.log('Delete task:', taskId);
-                }
-            } else {
-                // TODO: Implement edit functionality
-                console.log('Edit task:', taskId);
+            if (this.classList.contains('edit-btn')) {
+                // Handle edit button
+                const taskId = this.getAttribute('data-task-id');
+                const taskUrl = this.getAttribute('data-task-url');
+                const taskSchedule = this.getAttribute('data-task-schedule');
+                const taskStatus = this.getAttribute('data-task-status');
+                
+                openEditModal(taskId, taskUrl, taskSchedule, taskStatus);
+            } else if (this.classList.contains('delete-btn')) {
+                // Handle delete button
+                const taskId = this.getAttribute('data-task-id');
+                confirmDelete(taskId, e);
             }
         });
     });
@@ -193,6 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentTaskId = null;
 
 function openEditModal(taskId, url, schedule, status) {
+    console.log('Opening edit modal for task:', taskId, url, schedule, status);
     currentTaskId = taskId;
     
     // Set modal content
@@ -215,6 +233,8 @@ function saveTaskChanges() {
     const schedule = document.getElementById('editSchedule').value;
     const status = document.getElementById('editStatus').value;
     
+    console.log('Saving task changes:', { taskId, schedule, status });
+    
     // Create form data
     const formData = new FormData();
     formData.append('schedule', schedule);
@@ -226,7 +246,12 @@ function saveTaskChanges() {
         body: formData
     })
     .then(response => {
-        if (response.ok) {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
             showAlert('✅ Task updated successfully!', 'success');
             closeEditModal();
             // Reload the page to show updated data
@@ -234,7 +259,7 @@ function saveTaskChanges() {
                 window.location.reload();
             }, 1000);
         } else {
-            showAlert('❌ Error updating task. Please try again.', 'error');
+            showAlert(`❌ ${data.message}`, 'error');
         }
     })
     .catch(error => {
@@ -273,12 +298,19 @@ function closeDeleteModal() {
 function deleteTask() {
     if (!currentTaskId) return;
     
+    console.log('Deleting task:', currentTaskId);
+    
     // Send delete request
     fetch(`/delete_task/${currentTaskId}`, {
         method: 'POST'
     })
     .then(response => {
-        if (response.ok) {
+        console.log('Delete response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Delete response data:', data);
+        if (data.success) {
             showAlert('✅ Task deleted successfully!', 'success');
             closeDeleteModal();
             // Reload the page to show updated data
@@ -286,7 +318,7 @@ function deleteTask() {
                 window.location.reload();
             }, 1000);
         } else {
-            showAlert('❌ Error deleting task. Please try again.', 'error');
+            showAlert(`❌ ${data.message}`, 'error');
         }
     })
     .catch(error => {

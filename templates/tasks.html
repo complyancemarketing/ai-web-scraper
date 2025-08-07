@@ -28,7 +28,7 @@
                 <a href="{{ url_for('integrated_apps') }}" class="nav-item">
                     <i class="fas fa-plug"></i>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="{{ url_for('latest_updates') }}" class="nav-item">
                     <i class="fas fa-chart-bar"></i>
                 </a>
             </nav>
@@ -105,10 +105,15 @@
                                     </td>
                                     <td>
                                         <div class="actions-cell">
-                                            <button class="action-btn edit-btn" title="Edit" onclick="openEditModal({{ task[0] }}, '{{ task[1] }}', '{{ task[2] }}', '{{ task[5] }}')">
+                                            <button class="action-btn edit-btn" title="Edit" 
+                                                data-task-id="{{ task[0] }}" 
+                                                data-task-url="{{ task[1] }}" 
+                                                data-task-schedule="{{ task[2] }}" 
+                                                data-task-status="{{ task[5] }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="action-btn delete-btn" title="Delete" onclick="return confirmDelete({{ task[0] }}, event)">
+                                            <button class="action-btn delete-btn" title="Delete" 
+                                                data-task-id="{{ task[0] }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>

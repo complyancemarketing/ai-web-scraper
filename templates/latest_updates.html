@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latest Updates - AI Web Scraper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="analytics-layout">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
+                </a>
+                <a href="{{ url_for('tasks') }}" class="nav-item">
+                    <i class="fas fa-list"></i>
+                </a>
+                <a href="{{ url_for('integrated_apps') }}" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                </a>
+                <a href="{{ url_for('latest_updates') }}" class="nav-item active">
+                    <i class="fas fa-chart-bar"></i>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Log out
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Analytics Content -->
+            <div class="analytics-content">
+                <div class="analytics-header">
+                    <h1>Your Latest Updates</h1>
+                    <div class="search-container">
+                        <input type="text" placeholder="Search updates" class="search-input">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+
+                <div class="tasks-table-container">
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Update Number</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if updates %}
+                                {% for update in updates %}
+                                <tr>
+                                    <td>
+                                        <div class="update-number-cell">
+                                            <i class="fas fa-hashtag"></i>
+                                            <span>{{ update[0] }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="link-cell">
+                                            <i class="fas fa-external-link-alt"></i>
+                                            <a href="{{ update[1] }}" target="_blank" class="update-link">
+                                                {{ update[1][:50] }}{% if update[1]|length > 50 %}...{% endif %}
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="empty-table-message">
+                                        <div class="empty-table-content">
+                                            <span>No updates available</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 
