@@ -48,8 +48,10 @@
                 <div class="analytics-header">
                     <h1>Your AI Tasks</h1>
                     <div class="search-container">
-                        <input type="text" placeholder="Search tasks" class="search-input">
-                        <i class="fas fa-search search-icon"></i>
+                        <button class="delete-all-btn" onclick="confirmDeleteAll()">
+                            <i class="fas fa-trash"></i>
+                            Delete All
+                        </button>
                     </div>
                 </div>
 
@@ -60,6 +62,7 @@
                                 <tr>
                                     <th>URL</th>
                                     <th>Schedule</th>
+                                    <th>Sitemap</th>
                                     <th>Created</th>
                                     <th>Last Run</th>
                                     <th>Status</th>
@@ -90,6 +93,21 @@
                                                 {{ task[2] }}
                                             {% endif %}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <div class="sitemap-info">
+                                            {% if task|length > 6 and task[6] %}
+                                                <span class="sitemap-badge success">
+                                                    <i class="fas fa-sitemap"></i>
+                                                    {{ task[7] if task|length > 7 and task[7] else 0 }} URLs
+                                                </span>
+                                            {% else %}
+                                                <span class="sitemap-badge pending">
+                                                    <i class="fas fa-clock"></i>
+                                                    Pending
+                                                </span>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                     <td>{{ task[3][:10] if task[3] else 'N/A' }}</td>
                                     <td>{{ task[4][:10] if task[4] else 'Never' }}</td>
@@ -203,6 +221,28 @@
                 </button>
                 <button type="button" class="delete-btn" onclick="deleteTask()">
                     <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Confirmation Modal -->
+    <div id="deleteAllModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trash"></i> Delete All Tasks</h2>
+                <span class="close" onclick="closeDeleteAllModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete ALL tasks?</p>
+                <p style="color: #e74c3c; font-weight: bold;">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeDeleteAllModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="delete-btn" onclick="deleteAllTasks()">
+                    <i class="fas fa-trash"></i> Delete All
                 </button>
             </div>
         </div>

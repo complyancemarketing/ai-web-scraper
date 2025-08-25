@@ -1,6 +1,22 @@
+# AI Web Scraper - Consolidated Dependencies
+# Flask web framework
 Flask==2.3.3
+
+# HTTP requests and web scraping
 requests==2.31.0
 beautifulsoup4==4.12.2
 lxml==4.9.3
+urllib3==2.0.7
+
+# PDF generation
+reportlab==4.0.4
+
+# Content extraction and readability
+readability-lxml==0.8.1
+
+# Scheduling and date handling
+schedule==1.2.0
+python-dateutil==2.8.2
+
+# Task scheduling (if needed for advanced scheduling)
 APScheduler==3.10.4
-python-dateutil==2.8.2 

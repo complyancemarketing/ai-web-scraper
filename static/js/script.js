@@ -87,6 +87,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Test sitemap functionality
+    window.testSitemap = function() {
+        const urlInput = document.getElementById('url');
+        if (!urlInput || !urlInput.value.trim()) {
+            showAlert('Please enter a URL first', 'error');
+            return;
+        }
+        
+        const testBtn = document.getElementById('test-sitemap-btn');
+        if (testBtn) {
+            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            testBtn.disabled = true;
+        }
+        
+        const url = urlInput.value.trim();
+        fetch(`/test_sitemap/${encodeURIComponent(url)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`✅ ${data.message}`, 'success');
+                } else {
+                    showAlert(`❌ ${data.message}`, 'warning');
+                }
+            })
+            .catch(error => {
+                showAlert(`❌ Error testing sitemap: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                if (testBtn) {
+                    testBtn.innerHTML = '<i class="fas fa-search"></i> Test Sitemap';
+                    testBtn.disabled = false;
+                }
+            });
+    };
+    
     // Add hover effects to feature cards
     const featureCards = document.querySelectorAll('.feature-card');
     featureCards.forEach(card => {
@@ -338,6 +373,86 @@ window.onclick = function(event) {
     if (event.target === deleteModal) {
         closeDeleteModal();
     }
+}
+
+// Delete All Functions
+function confirmDeleteAll() {
+    document.getElementById('deleteAllModal').style.display = 'block';
+}
+
+function closeDeleteAllModal() {
+    document.getElementById('deleteAllModal').style.display = 'none';
+}
+
+function deleteAllTasks() {
+    // Send delete all request
+    fetch('/delete_all_tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('Delete all response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Delete all response data:', data);
+        if (data.success) {
+            showAlert('✅ All tasks deleted successfully!', 'success');
+            closeDeleteAllModal();
+            // Reload the page to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert('❌ Error deleting tasks: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting all tasks:', error);
+        showAlert('❌ Error deleting tasks. Please try again.', 'error');
+    });
+}
+
+// Delete All Updates Functions
+function confirmDeleteAllUpdates() {
+    document.getElementById('deleteAllUpdatesModal').style.display = 'block';
+}
+
+function closeDeleteAllUpdatesModal() {
+    document.getElementById('deleteAllUpdatesModal').style.display = 'none';
+}
+
+function deleteAllUpdates() {
+    // Send delete all updates request
+    fetch('/delete_all_updates', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('Delete all updates response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Delete all updates response data:', data);
+        if (data.success) {
+            showAlert('✅ All updates deleted successfully!', 'success');
+            closeDeleteAllUpdatesModal();
+            // Reload the page to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert('❌ Error deleting updates: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting all updates:', error);
+        showAlert('❌ Error deleting updates. Please try again.', 'error');
+    });
 }
 
 // Additional safety: prevent any default behavior on delete buttons

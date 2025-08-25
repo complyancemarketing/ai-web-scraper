@@ -48,8 +48,10 @@
                 <div class="analytics-header">
                     <h1>Your Latest Updates</h1>
                     <div class="search-container">
-                        <input type="text" placeholder="Search updates" class="search-input">
-                        <i class="fas fa-search search-icon"></i>
+                        <button class="delete-all-btn" onclick="confirmDeleteAllUpdates()">
+                            <i class="fas fa-trash"></i>
+                            Delete All
+                        </button>
                     </div>
                 </div>
 
@@ -58,7 +60,9 @@
                         <thead>
                             <tr>
                                 <th>Update Number</th>
-                                <th>Link</th>
+                                <th>Domain</th>
+                                <th>New URL</th>
+                                <th>Discovered At</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,18 +76,30 @@
                                         </div>
                                     </td>
                                     <td>
+                                        <div class="domain-cell">
+                                            <i class="fas fa-globe"></i>
+                                            <span>{{ update[1] }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
                                         <div class="link-cell">
                                             <i class="fas fa-external-link-alt"></i>
-                                            <a href="{{ update[1] }}" target="_blank" class="update-link">
-                                                {{ update[1][:50] }}{% if update[1]|length > 50 %}...{% endif %}
+                                            <a href="{{ update[2] }}" target="_blank" class="update-link">
+                                                {{ update[2][:60] }}{% if update[2]|length > 60 %}...{% endif %}
                                             </a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="date-cell">
+                                            <i class="fas fa-clock"></i>
+                                            <span>{{ update[3] }}</span>
                                         </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="2" class="empty-table-message">
+                                    <td colspan="4" class="empty-table-message">
                                         <div class="empty-table-content">
                                             <span>No updates available</span>
                                         </div>
@@ -93,6 +109,28 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Updates Confirmation Modal -->
+    <div id="deleteAllUpdatesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trash"></i> Delete All Updates</h2>
+                <span class="close" onclick="closeDeleteAllUpdatesModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete ALL updates?</p>
+                <p style="color: #e74c3c; font-weight: bold;">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeDeleteAllUpdatesModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="delete-btn" onclick="deleteAllUpdates()">
+                    <i class="fas fa-trash"></i> Delete All
+                </button>
             </div>
         </div>
     </div>
