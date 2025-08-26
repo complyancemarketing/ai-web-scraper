@@ -114,7 +114,7 @@
                                         </div>
                                     </td>
                                     <td>{{ task[3][:10] if task[3] else 'N/A' }}</td>
-                                    <td>{{ task[4][:10] if task[4] else 'Never' }}</td>
+                                    <td>{{ task[4]|safe if task[4] else 'Never' }}</td>
                                     <td>
                                         {% set comparison_result = task[9] if task|length > 9 else "Not checked" %}
                                         {% if "new URLs found" in comparison_result %}

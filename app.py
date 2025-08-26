@@ -176,8 +176,45 @@ def tasks():
     conn = sqlite3.connect('scraping_scheduler.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM scraping_tasks ORDER BY created_at DESC')
-    tasks = cursor.fetchall()
+    tasks_raw = cursor.fetchall()
     conn.close()
+    
+    # Format the timestamps for display
+    tasks = []
+    for task in tasks_raw:
+        task_list = list(task)
+        
+        # Format created_at (task[3])
+        if task[3]:
+            from datetime import datetime
+            try:
+                # Try ISO format first (with T and microseconds)
+                if 'T' in task[3]:
+                    dt = datetime.fromisoformat(task[3].replace('T', ' '))
+                else:
+                    # Fall back to standard format
+                    dt = datetime.strptime(task[3], '%Y-%m-%d %H:%M:%S')
+                task_list[3] = dt.strftime('%d-%m-%Y')
+            except:
+                task_list[3] = task[3][:10] if task[3] else 'N/A'
+        
+        # Format last_run (task[4]) 
+        if task[4]:
+            from datetime import datetime
+            try:
+                # Try ISO format first (with T and microseconds)
+                if 'T' in task[4]:
+                    dt = datetime.fromisoformat(task[4].replace('T', ' '))
+                else:
+                    # Fall back to standard format
+                    dt = datetime.strptime(task[4], '%Y-%m-%d %H:%M:%S')
+                formatted_date = dt.strftime('%d-%m-%Y')
+                formatted_time = dt.strftime('%I:%M%p').lower()
+                task_list[4] = f"{formatted_date} / {formatted_time}"
+            except:
+                task_list[4] = task[4][:10] if task[4] else 'Never'
+        
+        tasks.append(tuple(task_list))
     
     return render_template('tasks.html', tasks=tasks)
 
@@ -512,8 +549,28 @@ def latest_updates():
         ORDER BY discovered_at DESC 
         LIMIT 100
     ''')
-    updates = cursor.fetchall()
+    updates_raw = cursor.fetchall()
     conn.close()
+    
+    # Format the timestamps
+    updates = []
+    for update in updates_raw:
+        # Parse the timestamp and format it as "26-08-2025 / 4:55pm"
+        from datetime import datetime
+        try:
+            # Try ISO format first (with T and microseconds)
+            if 'T' in update[3]:
+                dt = datetime.fromisoformat(update[3].replace('T', ' '))
+            else:
+                # Fall back to standard format
+                dt = datetime.strptime(update[3], '%Y-%m-%d %H:%M:%S')
+            formatted_time = dt.strftime('%d-%m-%Y / %I:%M%p').lower()
+        except:
+            # If parsing fails, use the original timestamp
+            formatted_time = update[3]
+        # Create new tuple with formatted timestamp
+        formatted_update = (update[0], update[1], update[2], formatted_time)
+        updates.append(formatted_update)
     
     return render_template('latest_updates.html', updates=updates)
 
