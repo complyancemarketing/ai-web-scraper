@@ -52,6 +52,35 @@ def init_db():
         )
     ''')
     
+    # Create workflow_apps table to track last run times
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS workflow_apps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            app_name TEXT NOT NULL UNIQUE,
+            description TEXT,
+            status TEXT DEFAULT 'Connected',
+            last_run TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Insert default workflow apps if they don't exist
+    default_apps = [
+        ('Webhook', 'Send data to external services via HTTP requests'),
+        ('n8n', 'Workflow automation and data processing'),
+        ('Google Drive', 'Store and manage files in the cloud'),
+        ('Google Sheets', 'Export data to spreadsheets for analysis'),
+        ('Airtable', 'Organize data in flexible databases'),
+        ('Microsoft Teams', 'Send notifications and updates to teams'),
+        ('LinkedIn', 'Professional networking and lead generation')
+    ]
+    
+    for app_name, description in default_apps:
+        cursor.execute('''
+            INSERT OR IGNORE INTO workflow_apps (app_name, description) 
+            VALUES (?, ?)
+        ''', (app_name, description))
+    
     # Add new columns if they don't exist
     try:
         cursor.execute('ALTER TABLE scraping_tasks ADD COLUMN sitemap_fetched BOOLEAN DEFAULT FALSE')
@@ -245,8 +274,9 @@ def run_all_tasks():
                 # Get scraping tool instance
                 tool = get_scraping_tool()
                 
-                # Disable individual Teams notifications for batch processing
-                tool.configure_teams_notifications(enabled=False)
+                # Enable individual Teams notifications for batch processing
+                # This ensures notifications are sent when changes are detected
+                tool.configure_teams_notifications(enabled=True)
                 
                 # Extract domain from URL
                 from urllib.parse import urlparse
@@ -356,15 +386,21 @@ def run_all_tasks():
                 for thread in threads:
                     thread.join(timeout=300)  # 5 minutes timeout per thread
                 
-                # Send batch Teams notification
+                # Send batch Teams notification if there are results
                 if batch_results:
                     from scrapy.core.teams_notifier import TeamsNotifier
                     notifier = TeamsNotifier()
                     success = notifier.send_batch_summary(batch_results)
                     if success:
                         print(f"✅ Batch Teams notification sent for {len(batch_results)} domains")
+                        # Update last run time for workflow apps
+                        update_workflow_app_last_run('Webhook')
+                        update_workflow_app_last_run('n8n')
+                        update_workflow_app_last_run('Microsoft Teams')
                     else:
                         print(f"⚠️ Failed to send batch Teams notification")
+                else:
+                    print("ℹ️ No batch results to send notification for")
                 
             except Exception as e:
                 print(f"Error in batch notification: {e}")
@@ -428,6 +464,43 @@ def test_sitemap(url):
 @app.route('/integrated_apps')
 def integrated_apps():
     return render_template('integrated_apps.html')
+
+@app.route('/api/workflow_apps')
+def api_workflow_apps():
+    """Get all workflow apps with their last run times"""
+    conn = sqlite3.connect('scraping_scheduler.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT app_name, description, status, last_run FROM workflow_apps ORDER BY app_name')
+    apps = cursor.fetchall()
+    conn.close()
+    
+    app_list = []
+    for app in apps:
+        app_list.append({
+            'app_name': app[0],
+            'description': app[1],
+            'status': app[2],
+            'last_run': app[3]
+        })
+    
+    return jsonify(app_list)
+
+def update_workflow_app_last_run(app_name: str):
+    """Update the last run time for a workflow app"""
+    try:
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        current_time = datetime.now().isoformat()
+        cursor.execute('''
+            UPDATE workflow_apps 
+            SET last_run = ? 
+            WHERE app_name = ?
+        ''', (current_time, app_name))
+        conn.commit()
+        conn.close()
+        print(f"✅ Updated last run time for {app_name}")
+    except Exception as e:
+        print(f"❌ Error updating last run time for {app_name}: {e}")
 
 @app.route('/latest_updates')
 def latest_updates():

@@ -300,6 +300,46 @@
     color: #721c24;
 }
 
+/* Last Run Column Styles */
+.last-run-cell {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.last-run-never {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.last-run-recent {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.last-run-date {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.last-run-time {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.last-run-old {
+    color: #ffc107;
+}
+
+.error-message {
+    text-align: center;
+    color: #dc3545;
+    font-style: italic;
+    padding: 20px;
+}
+
 /* Comparison Result Badge */
 .comparison-badge {
     padding: 6px 12px;

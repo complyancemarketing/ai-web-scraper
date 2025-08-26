@@ -25,11 +25,11 @@
                 <a href="{{ url_for('tasks') }}" class="nav-item">
                     <i class="fas fa-list"></i>
                 </a>
-                <a href="{{ url_for('integrated_apps') }}" class="nav-item active">
-                    <i class="fas fa-plug"></i>
-                </a>
                 <a href="{{ url_for('latest_updates') }}" class="nav-item">
                     <i class="fas fa-chart-bar"></i>
+                </a>
+                <a href="{{ url_for('integrated_apps') }}" class="nav-item active">
+                    <i class="fas fa-plug"></i>
                 </a>
             </nav>
             
@@ -47,10 +47,6 @@
             <div class="analytics-content">
                 <div class="analytics-header">
                     <h1>Your Connected Workflow Apps</h1>
-                    <div class="search-container">
-                        <input type="text" placeholder="Search apps" class="search-input">
-                        <i class="fas fa-search search-icon"></i>
-                    </div>
                 </div>
 
                 <div class="tasks-table-container">
@@ -60,106 +56,11 @@
                                 <th>APP NAME</th>
                                 <th>DESCRIPTION</th>
                                 <th>STATUS</th>
+                                <th>LAST RUN</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Webhook -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon webhook">
-                                            <i class="fas fa-link"></i>
-                                        </div>
-                                        <span>Webhook</span>
-                                    </div>
-                                </td>
-                                <td>Send data to external services via HTTP requests</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
-
-                            <!-- n8n -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon n8n">
-                                            <i class="fas fa-cogs"></i>
-                                        </div>
-                                        <span>n8n</span>
-                                    </div>
-                                </td>
-                                <td>Workflow automation and data processing</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
-
-                            <!-- Google Drive -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon google-drive">
-                                            <i class="fab fa-google-drive"></i>
-                                        </div>
-                                        <span>Google Drive</span>
-                                    </div>
-                                </td>
-                                <td>Store and manage files in the cloud</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
-
-                            <!-- Google Sheets -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon google-sheets">
-                                            <i class="fas fa-table"></i>
-                                        </div>
-                                        <span>Google Sheets</span>
-                                    </div>
-                                </td>
-                                <td>Export data to spreadsheets for analysis</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
-
-                            <!-- Airtable -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon airtable">
-                                            <i class="fas fa-database"></i>
-                                        </div>
-                                        <span>Airtable</span>
-                                    </div>
-                                </td>
-                                <td>Organize data in flexible databases</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
-
-                            <!-- Microsoft Teams -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon teams">
-                                            <i class="fab fa-microsoft"></i>
-                                        </div>
-                                        <span>Microsoft Teams</span>
-                                    </div>
-                                </td>
-                                <td>Send notifications and updates to teams</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
-
-                            <!-- LinkedIn -->
-                            <tr>
-                                <td>
-                                    <div class="app-info">
-                                        <div class="app-icon linkedin">
-                                            <i class="fab fa-linkedin"></i>
-                                        </div>
-                                        <span>LinkedIn</span>
-                                    </div>
-                                </td>
-                                <td>Professional networking and lead generation</td>
-                                <td><span class="status-badge active">Connected</span></td>
-                            </tr>
+                        <tbody id="workflow-apps-tbody">
+                            <!-- Dynamic content will be loaded here -->
                         </tbody>
                     </table>
                 </div>
@@ -169,5 +70,132 @@
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+    
+    <script>
+        // Function to get app icon based on app name
+        function getAppIcon(appName) {
+            const iconMap = {
+                'Webhook': '<i class="fas fa-link"></i>',
+                'n8n': '<i class="fas fa-cogs"></i>',
+                'Google Drive': '<i class="fab fa-google-drive"></i>',
+                'Google Sheets': '<i class="fas fa-table"></i>',
+                'Airtable': '<i class="fas fa-database"></i>',
+                'Microsoft Teams': '<i class="fab fa-microsoft"></i>',
+                'LinkedIn': '<i class="fab fa-linkedin"></i>'
+            };
+            return iconMap[appName] || '<i class="fas fa-plug"></i>';
+        }
+        
+        // Function to get app icon class based on app name
+        function getAppIconClass(appName) {
+            const classMap = {
+                'Webhook': 'webhook',
+                'n8n': 'n8n',
+                'Google Drive': 'google-drive',
+                'Google Sheets': 'google-sheets',
+                'Airtable': 'airtable',
+                'Microsoft Teams': 'teams',
+                'LinkedIn': 'linkedin'
+            };
+            return classMap[appName] || 'default';
+        }
+        
+        // Function to format date for display
+        function formatLastRun(dateString) {
+            if (!dateString) {
+                return '<span class="last-run-never">Never</span>';
+            }
+            
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    // Format day and date
+                    const dayOptions = { 
+                        weekday: 'long', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    };
+                    const dayString = date.toLocaleDateString('en-US', dayOptions);
+                    
+                    // Format time in 12-hour format with AM/PM
+                    const timeOptions = { 
+                        hour: 'numeric', 
+                        minute: '2-digit', 
+                        hour12: true 
+                    };
+                    const timeString = date.toLocaleTimeString('en-US', timeOptions);
+                    
+                    return `<span class="last-run-recent">
+                        <div class="last-run-date">${dayString}</div>
+                        <div class="last-run-time">${timeString}</div>
+                    </span>`;
+                } else if (diffDays <= 7) {
+                    return `<span class="last-run-recent">${diffDays} days ago</span>`;
+                } else {
+                    return `<span class="last-run-old">${date.toLocaleDateString()}</span>`;
+                }
+            } catch (e) {
+                return '<span class="last-run-never">Never</span>';
+            }
+        }
+        
+        // Function to load workflow apps data
+        async function loadWorkflowApps() {
+            try {
+                const response = await fetch('/api/workflow_apps');
+                const apps = await response.json();
+                
+                // Sort apps: apps with last_run times first, then apps without last_run times
+                apps.sort((a, b) => {
+                    const aHasLastRun = a.last_run && a.last_run.trim() !== '';
+                    const bHasLastRun = b.last_run && b.last_run.trim() !== '';
+                    
+                    if (aHasLastRun && !bHasLastRun) return -1;
+                    if (!aHasLastRun && bHasLastRun) return 1;
+                    return 0;
+                });
+                
+                const tbody = document.getElementById('workflow-apps-tbody');
+                tbody.innerHTML = '';
+                
+                apps.forEach(app => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <div class="app-info">
+                                <div class="app-icon ${getAppIconClass(app.app_name)}">
+                                    ${getAppIcon(app.app_name)}
+                                </div>
+                                <span>${app.app_name}</span>
+                            </div>
+                        </td>
+                        <td>${app.description}</td>
+                        <td><span class="status-badge active">${app.status}</span></td>
+                        <td class="last-run-cell">${formatLastRun(app.last_run)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                console.log('Workflow apps loaded successfully');
+            } catch (error) {
+                console.error('Error loading workflow apps:', error);
+                // Show error message or fallback content
+                const tbody = document.getElementById('workflow-apps-tbody');
+                tbody.innerHTML = '<tr><td colspan="4" class="error-message">Error loading workflow apps data</td></tr>';
+            }
+        }
+        
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWorkflowApps();
+            
+            // Refresh data every 30 seconds
+            setInterval(loadWorkflowApps, 30000);
+        });
+    </script>
 </body>
 </html> 
