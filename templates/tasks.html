@@ -48,6 +48,10 @@
                 <div class="analytics-header">
                     <h1>Your AI Tasks</h1>
                     <div class="search-container">
+                        <button class="run-all-btn" onclick="confirmRunAll()">
+                            <i class="fas fa-play"></i>
+                            Run All
+                        </button>
                         <button class="delete-all-btn" onclick="confirmDeleteAll()">
                             <i class="fas fa-trash"></i>
                             Delete All
@@ -65,7 +69,7 @@
                                     <th>Sitemap</th>
                                     <th>Created</th>
                                     <th>Last Run</th>
-                                    <th>Status</th>
+                                    <th>Comparison Result</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -112,22 +116,35 @@
                                     <td>{{ task[3][:10] if task[3] else 'N/A' }}</td>
                                     <td>{{ task[4][:10] if task[4] else 'Never' }}</td>
                                     <td>
-                                        <span class="status-badge {% if task[5] == 'active' %}active{% else %}paused{% endif %}">
-                                            <i class="fas fa-{% if task[5] == 'active' %}play{% else %}pause{% endif %}"></i>
-                                            {% if task[5] == 'active' %}
-                                                Active
-                                            {% else %}
-                                                Paused
-                                            {% endif %}
-                                        </span>
+                                        {% set comparison_result = task[9] if task|length > 9 else "Not checked" %}
+                                        {% if "new URLs found" in comparison_result %}
+                                            <span class="comparison-badge new-urls">
+                                                <i class="fas fa-plus-circle"></i>
+                                                {{ comparison_result }}
+                                            </span>
+                                        {% elif comparison_result == "No update" %}
+                                            <span class="comparison-badge no-update">
+                                                <i class="fas fa-check-circle"></i>
+                                                No update
+                                            </span>
+                                        {% elif comparison_result == "Error" %}
+                                            <span class="comparison-badge error">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                Error
+                                            </span>
+                                        {% else %}
+                                            <span class="comparison-badge not-checked">
+                                                <i class="fas fa-clock"></i>
+                                                {{ comparison_result }}
+                                            </span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="actions-cell">
                                             <button class="action-btn edit-btn" title="Edit" 
                                                 data-task-id="{{ task[0] }}" 
                                                 data-task-url="{{ task[1] }}" 
-                                                data-task-schedule="{{ task[2] }}" 
-                                                data-task-status="{{ task[5] }}">
+                                                data-task-schedule="{{ task[2] }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="action-btn delete-btn" title="Delete" 
@@ -182,15 +199,6 @@
                             <option value="monthly">Every Month</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="editStatus">
-                            <i class="fas fa-toggle-on"></i> Task Status
-                        </label>
-                        <select id="editStatus" name="status" required class="form-input">
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                        </select>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -221,6 +229,28 @@
                 </button>
                 <button type="button" class="delete-btn" onclick="deleteTask()">
                     <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Run All Confirmation Modal -->
+    <div id="runAllModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-play"></i> Run All Tasks</h2>
+                <span class="close" onclick="closeRunAllModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to run ALL active tasks?</p>
+                <p style="color: #27ae60; font-weight: bold;">This will start scraping for all active tasks immediately.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeRunAllModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="run-btn" onclick="runAllTasks()">
+                    <i class="fas fa-play"></i> Run All
                 </button>
             </div>
         </div>

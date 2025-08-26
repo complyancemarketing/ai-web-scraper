@@ -155,9 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const taskId = this.getAttribute('data-task-id');
                 const taskUrl = this.getAttribute('data-task-url');
                 const taskSchedule = this.getAttribute('data-task-schedule');
-                const taskStatus = this.getAttribute('data-task-status');
                 
-                openEditModal(taskId, taskUrl, taskSchedule, taskStatus);
+                openEditModal(taskId, taskUrl, taskSchedule);
             } else if (this.classList.contains('delete-btn')) {
                 // Handle delete button
                 const taskId = this.getAttribute('data-task-id');
@@ -244,15 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Modal functionality for tasks page
 let currentTaskId = null;
 
-function openEditModal(taskId, url, schedule, status) {
-    console.log('Opening edit modal for task:', taskId, url, schedule, status);
+function openEditModal(taskId, url, schedule) {
+    console.log('Opening edit modal for task:', taskId, url, schedule);
     currentTaskId = taskId;
     
     // Set modal content
     document.getElementById('modalUrl').textContent = url;
     document.getElementById('editTaskId').value = taskId;
     document.getElementById('editSchedule').value = schedule;
-    document.getElementById('editStatus').value = status;
     
     // Show modal
     document.getElementById('editModal').style.display = 'block';
@@ -266,14 +264,12 @@ function closeEditModal() {
 function saveTaskChanges() {
     const taskId = document.getElementById('editTaskId').value;
     const schedule = document.getElementById('editSchedule').value;
-    const status = document.getElementById('editStatus').value;
     
-    console.log('Saving task changes:', { taskId, schedule, status });
+    console.log('Saving task changes:', { taskId, schedule });
     
     // Create form data
     const formData = new FormData();
     formData.append('schedule', schedule);
-    formData.append('status', status);
     
     // Send update request
     fetch(`/edit_task/${taskId}`, {
@@ -366,6 +362,7 @@ function deleteTask() {
 window.onclick = function(event) {
     const editModal = document.getElementById('editModal');
     const deleteModal = document.getElementById('deleteModal');
+    const runAllModal = document.getElementById('runAllModal');
     
     if (event.target === editModal) {
         closeEditModal();
@@ -373,6 +370,49 @@ window.onclick = function(event) {
     if (event.target === deleteModal) {
         closeDeleteModal();
     }
+    if (event.target === runAllModal) {
+        closeRunAllModal();
+    }
+}
+
+// Run All Functions
+function confirmRunAll() {
+    document.getElementById('runAllModal').style.display = 'block';
+}
+
+function closeRunAllModal() {
+    document.getElementById('runAllModal').style.display = 'none';
+}
+
+function runAllTasks() {
+    // Send run all request
+    fetch('/run_all_tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('Run all response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Run all response data:', data);
+        if (data.success) {
+            showAlert('✅ All active tasks started successfully!', 'success');
+            closeRunAllModal();
+            // Reload the page to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert('❌ Error running tasks: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error running all tasks:', error);
+        showAlert('❌ Error running tasks. Please try again.', 'error');
+    });
 }
 
 // Delete All Functions

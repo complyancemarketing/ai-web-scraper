@@ -137,7 +137,37 @@
 /* Search Container */
 .search-container {
     position: relative;
-    width: 300px;
+    width: 400px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.run-all-btn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.run-all-btn:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.run-all-btn:active {
+    transform: translateY(0);
 }
 
 .delete-all-btn {
@@ -268,6 +298,40 @@
 .status-badge.paused {
     background: #f8d7da;
     color: #721c24;
+}
+
+/* Comparison Result Badge */
+.comparison-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+}
+
+.comparison-badge.new-urls {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.comparison-badge.no-update {
+    background: #d4edda;
+    color: #155724;
+}
+
+.comparison-badge.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.comparison-badge.not-checked {
+    background: #fff3cd;
+    color: #856404;
 }
 
 /* Action Buttons */
@@ -569,6 +633,15 @@
 
 .delete-btn:hover {
     background: #c82333;
+}
+
+.run-btn {
+    background: #28a745;
+    color: white;
+}
+
+.run-btn:hover {
+    background: #218838;
 }
 
 /* Alert Styles */

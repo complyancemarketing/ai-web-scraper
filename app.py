@@ -3,6 +3,8 @@ import sqlite3
 from datetime import datetime
 import os
 import sys
+import threading
+import subprocess
 
 # Add the scrapy directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'scrapy'))
@@ -63,6 +65,11 @@ def init_db():
         
     try:
         cursor.execute('ALTER TABLE scraping_tasks ADD COLUMN last_sitemap_count INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+        
+    try:
+        cursor.execute('ALTER TABLE scraping_tasks ADD COLUMN comparison_result TEXT DEFAULT "Not checked"')
     except sqlite3.OperationalError:
         pass  # Column already exists
     
@@ -164,7 +171,8 @@ def api_tasks():
             'status': task[5],
             'sitemap_fetched': task[6] if len(task) > 6 else False,
             'initial_sitemap_count': task[7] if len(task) > 7 else 0,
-            'last_sitemap_count': task[8] if len(task) > 8 else 0
+            'last_sitemap_count': task[8] if len(task) > 8 else 0,
+            'comparison_result': task[9] if len(task) > 9 else "Not checked"
         })
     
     return jsonify(task_list)
@@ -172,19 +180,18 @@ def api_tasks():
 @app.route('/edit_task/<int:task_id>', methods=['POST'])
 def edit_task(task_id):
     schedule = request.form.get('schedule')
-    status = request.form.get('status')
     
-    if not schedule or not status:
-        return jsonify({'success': False, 'message': 'Please fill in all fields'}), 400
+    if not schedule:
+        return jsonify({'success': False, 'message': 'Please fill in schedule field'}), 400
     
     try:
         conn = sqlite3.connect('scraping_scheduler.db')
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE scraping_tasks 
-            SET schedule = ?, status = ?
+            SET schedule = ?
             WHERE id = ?
-        ''', (schedule, status, task_id))
+        ''', (schedule, task_id))
         conn.commit()
         conn.close()
         return jsonify({'success': True, 'message': 'Task updated successfully'})
@@ -214,6 +221,166 @@ def delete_all_tasks():
         return jsonify({'success': True, 'message': 'All tasks deleted successfully'})
     except Exception as e:
         return jsonify({'success': False, 'message': 'Error deleting all tasks'})
+
+@app.route('/run_all_tasks', methods=['POST'])
+def run_all_tasks():
+    try:
+        # Get all active tasks
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, url FROM scraping_tasks WHERE status = "active"')
+        active_tasks = cursor.fetchall()
+        conn.close()
+        
+        if not active_tasks:
+            return jsonify({'success': False, 'message': 'No active tasks found'})
+        
+        # Shared list to collect results for batch notification
+        batch_results = []
+        batch_results_lock = threading.Lock()
+        
+        # Function to fetch sitemap and compare for a single task
+        def process_single_task(task_id, task_url):
+            try:
+                # Get scraping tool instance
+                tool = get_scraping_tool()
+                
+                # Disable individual Teams notifications for batch processing
+                tool.configure_teams_notifications(enabled=False)
+                
+                # Extract domain from URL
+                from urllib.parse import urlparse
+                domain = urlparse(task_url).netloc
+                
+                # Step 1: Fetch current sitemap
+                print(f"Fetching sitemap for {task_url}...")
+                sitemap_fetched = tool.fetch_sitemap(task_url)
+                
+                result_text = "Error fetching sitemap"
+                result_data = {
+                    'domain': domain,
+                    'has_changes': False,
+                    'total_added': 0,
+                    'total_modified': 0,
+                    'error': False
+                }
+                
+                if sitemap_fetched:
+                    # Step 2: Compare with previous sitemap
+                    print(f"Comparing sitemaps for {domain}...")
+                    comparison_result = tool.compare_sitemaps(domain)
+                    
+                    # The comparison automatically stores new URLs in sitemap_updates table
+                    if comparison_result and comparison_result.get('has_changes'):
+                        added_count = comparison_result.get('total_added', 0)
+                        modified_count = comparison_result.get('total_modified', 0)
+                        
+                        if added_count > 0 or modified_count > 0:
+                            update_parts = []
+                            if added_count > 0:
+                                update_parts.append(f"{added_count} new URLs")
+                            if modified_count > 0:
+                                update_parts.append(f"{modified_count} modified URLs")
+                            result_text = " and ".join(update_parts) + " found"
+                            
+                            result_data.update({
+                                'has_changes': True,
+                                'total_added': added_count,
+                                'total_modified': modified_count
+                            })
+                        else:
+                            result_text = "No update"
+                        print(f"✅ Found {added_count} new URLs and {modified_count} modified URLs for {domain}")
+                    else:
+                        result_text = "No update"
+                        print(f"✅ No changes found for {domain}")
+                else:
+                    print(f"❌ Failed to fetch sitemap for {task_url}")
+                    result_data['error'] = True
+                    result_text = "Error"
+                
+                # Add result to batch collection
+                with batch_results_lock:
+                    batch_results.append(result_data)
+                
+                # Update the comparison result in the database
+                conn = sqlite3.connect('scraping_scheduler.db')
+                cursor = conn.cursor()
+                cursor.execute('UPDATE scraping_tasks SET comparison_result = ? WHERE id = ?', (result_text, task_id))
+                conn.commit()
+                conn.close()
+                    
+            except Exception as e:
+                print(f"Error processing task for {task_url}: {e}")
+                
+                # Add error result to batch collection
+                with batch_results_lock:
+                    batch_results.append({
+                        'domain': domain if 'domain' in locals() else 'Unknown',
+                        'has_changes': False,
+                        'total_added': 0,
+                        'total_modified': 0,
+                        'error': True
+                    })
+                
+                # Update with error status
+                try:
+                    conn = sqlite3.connect('scraping_scheduler.db')
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE scraping_tasks SET comparison_result = ? WHERE id = ?', ("Error", task_id))
+                    conn.commit()
+                    conn.close()
+                except:
+                    pass
+        
+        # Start all tasks in separate threads
+        threads = []
+        for task_id, task_url in active_tasks:
+            thread = threading.Thread(target=process_single_task, args=(task_id, task_url))
+            thread.daemon = True  # Dies when main program exits
+            thread.start()
+            threads.append(thread)
+        
+        # Update last_run for all active tasks
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        current_time = datetime.now().isoformat()
+        cursor.execute('UPDATE scraping_tasks SET last_run = ? WHERE status = "active"', (current_time,))
+        conn.commit()
+        conn.close()
+        
+        # Start a background thread to wait for completion and send batch notification
+        def send_batch_notification():
+            try:
+                # Wait for all threads to complete (with timeout)
+                for thread in threads:
+                    thread.join(timeout=300)  # 5 minutes timeout per thread
+                
+                # Send batch Teams notification
+                if batch_results:
+                    from scrapy.core.teams_notifier import TeamsNotifier
+                    notifier = TeamsNotifier()
+                    success = notifier.send_batch_summary(batch_results)
+                    if success:
+                        print(f"✅ Batch Teams notification sent for {len(batch_results)} domains")
+                    else:
+                        print(f"⚠️ Failed to send batch Teams notification")
+                
+            except Exception as e:
+                print(f"Error in batch notification: {e}")
+        
+        # Start the batch notification thread
+        notification_thread = threading.Thread(target=send_batch_notification)
+        notification_thread.daemon = True
+        notification_thread.start()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Started sitemap checking for {len(active_tasks)} active tasks successfully. Teams notification will be sent when complete.'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error running tasks: {str(e)}'})
 
 @app.route('/delete_all_updates', methods=['POST'])
 def delete_all_updates():
