@@ -223,25 +223,47 @@ def api_tasks():
     conn = sqlite3.connect('scraping_scheduler.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM scraping_tasks ORDER BY created_at DESC')
-    tasks = cursor.fetchall()
+    tasks_raw = cursor.fetchall()
     conn.close()
     
-    task_list = []
-    for task in tasks:
-        task_list.append({
-            'id': task[0],
-            'url': task[1],
-            'schedule': task[2],
-            'created_at': task[3],
-            'last_run': task[4],
-            'status': task[5],
-            'sitemap_fetched': task[6] if len(task) > 6 else False,
-            'initial_sitemap_count': task[7] if len(task) > 7 else 0,
-            'last_sitemap_count': task[8] if len(task) > 8 else 0,
-            'comparison_result': task[9] if len(task) > 9 else "Not checked"
-        })
+    # Format the timestamps for display (same as /tasks route)
+    tasks = []
+    for task in tasks_raw:
+        task_list = list(task)
+        
+        # Format created_at (task[3])
+        if task[3]:
+            from datetime import datetime
+            try:
+                # Try ISO format first (with T and microseconds)
+                if 'T' in task[3]:
+                    dt = datetime.fromisoformat(task[3].replace('T', ' '))
+                else:
+                    # Fall back to standard format
+                    dt = datetime.strptime(task[3], '%Y-%m-%d %H:%M:%S')
+                task_list[3] = dt.strftime('%d-%m-%Y')
+            except:
+                task_list[3] = task[3][:10] if task[3] else 'N/A'
+        
+        # Format last_run (task[4]) 
+        if task[4]:
+            from datetime import datetime
+            try:
+                # Try ISO format first (with T and microseconds)
+                if 'T' in task[4]:
+                    dt = datetime.fromisoformat(task[4].replace('T', ' '))
+                else:
+                    # Fall back to standard format
+                    dt = datetime.strptime(task[4], '%Y-%m-%d %H:%M:%S')
+                formatted_date = dt.strftime('%d-%m-%Y')
+                formatted_time = dt.strftime('%I:%M%p').lower()
+                task_list[4] = f"{formatted_date} / {formatted_time}"
+            except:
+                task_list[4] = task[4][:10] if task[4] else 'Never'
+        
+        tasks.append(tuple(task_list))
     
-    return jsonify(task_list)
+    return jsonify({'success': True, 'tasks': tasks})
 
 @app.route('/edit_task/<int:task_id>', methods=['POST'])
 def edit_task(task_id):
