@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Government Website Dashboard - AI Web Scraper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="analytics-layout">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
+                </a>
+                <a href="{{ url_for('tasks') }}" class="nav-item">
+                    <i class="fas fa-list"></i>
+                </a>
+                <a href="{{ url_for('latest_updates') }}" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                </a>
+                <a href="{{ url_for('government_dashboard') }}" class="nav-item active">
+                    <i class="fas fa-landmark"></i>
+                </a>
+                <a href="{{ url_for('integrated_apps') }}" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Log out
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Analytics Content -->
+            <div class="analytics-content">
+                <div class="analytics-header">
+                    <h1>Government Website Dashboard</h1>
+                    <p>Monitor and track government website updates and compliance changes</p>
+                </div>
+
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Total Government Sites</h3>
+                            <p class="stat-number">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Last Updated</h3>
+                            <p class="stat-number">Never</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Critical Updates</h3>
+                            <p class="stat-number">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Compliance Status</h3>
+                            <p class="stat-number">100%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="government-sites-container">
+                    <div class="section-header">
+                        <h2>Government Websites</h2>
+                        <button class="add-site-btn">
+                            <i class="fas fa-plus"></i>
+                            Add Government Site
+                        </button>
+                    </div>
+                    
+                    <div class="sites-table-container">
+                        <table class="tasks-table">
+                            <thead>
+                                <tr>
+                                    <th>Website</th>
+                                    <th>Department</th>
+                                    <th>Last Check</th>
+                                    <th>Status</th>
+                                    <th>Updates</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <i class="fas fa-landmark"></i>
+                                            <h3>No Government Websites Added</h3>
+                                            <p>Start monitoring government websites by adding your first site.</p>
+                                            <button class="btn-primary">
+                                                <i class="fas fa-plus"></i>
+                                                Add First Site
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

@@ -1,146 +1,141 @@
-# AI Web Scraper
+# AI Web Scraper - Modern SaaS Dashboard
 
-A comprehensive web scraping tool with intelligent sitemap monitoring, change detection, and automated report generation.
+A modern, professional web application for AI-powered web scraping with a clean SaaS-style interface built using React, Tailwind CSS, and shadcn UI.
 
 ## Features
 
-- **Intelligent Sitemap Monitoring**: Automatically fetches and monitors website sitemaps for changes
-- **Change Detection**: Compares sitemaps over time to identify new, modified, or removed URLs
-- **Automated Scraping**: Scrapes only new/changed content to minimize bandwidth and processing
-- **PDF Report Generation**: Creates professional PDF reports from scraped content
-- **Web Interface**: Modern Flask-based web interface for task management
-- **Scheduling**: Built-in scheduling for automated monitoring
-- **Government Site Support**: Specialized crawling for sites without standard sitemaps
+- **Modern SaaS Design**: Clean, professional interface with sidebar navigation
+- **Task Management**: Add, view, and manage AI scraping tasks
+- **Real-time Updates**: Monitor scraping status and results
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Government Dashboard**: Specialized monitoring for government websites
+- **Integrated Apps**: Connect with external services like Google Drive and N8N
+
+## Tech Stack
+
+- **Frontend**: React 18 with Vite
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn UI
+- **Icons**: Lucide React
+- **Backend**: Python Flask (existing)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 16+ 
+- npm or yarn
+- Python 3.8+ (for backend)
+
+### Installation
+
+1. **Install Frontend Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for Production**
+   ```bash
+   npm run build
+   ```
+
+### Backend Setup
+
+The backend remains the same as your existing Flask application. Make sure to:
+
+1. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Start the Flask server:
+   ```bash
+   python app.py
+   ```
 
 ## Project Structure
 
 ```
 ai-web-scraper/
-├── app.py                      # Flask web application
-├── requirements.txt            # Python dependencies
-├── scraping_scheduler.db      # SQLite database
-├── scrapy/                    # Core scraping package
-│   ├── __init__.py
-│   ├── main.py               # Main scraping tool
-│   ├── core/                 # Core modules
-│   │   ├── __init__.py
-│   │   ├── config.py         # Configuration settings
-│   │   ├── sitemap_fetcher.py    # Sitemap fetching logic
-│   │   ├── sitemap_comparator.py # Sitemap comparison logic
-│   │   ├── web_scraper.py        # Web scraping logic
-│   │   └── pdf_generator.py      # PDF report generation
-│   ├── utils/                # Utility modules
-│   │   ├── __init__.py
-│   │   └── government_sitemap_generator.py  # Government site crawler
-│   ├── sitemaps/            # Stored sitemaps
-│   ├── scraped_data/        # Scraped content
-│   └── pdfs/               # Generated reports
-├── static/                 # Web assets
-│   ├── css/
-│   └── js/
-└── templates/              # HTML templates
+├── src/
+│   ├── components/
+│   │   ├── ui/           # shadcn UI components
+│   │   ├── Sidebar.jsx   # Navigation sidebar
+│   │   ├── TaskForm.jsx  # Task creation form
+│   │   └── TaskTable.jsx # Task listing table
+│   ├── lib/
+│   │   └── utils.js      # Utility functions
+│   ├── App.jsx           # Main application component
+│   ├── main.jsx          # Application entry point
+│   └── index.css         # Global styles
+├── scrapy/               # Existing backend code
+├── templates/            # Existing Flask templates
+├── static/               # Existing static files
+├── package.json          # Frontend dependencies
+├── tailwind.config.js    # Tailwind configuration
+├── vite.config.js        # Vite configuration
+└── README.md
 ```
 
-## Installation
+## Design Features
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd ai-web-scraper
-   ```
+### Modern SaaS Layout
+- **Sidebar Navigation**: Clean vertical navigation with icons and labels
+- **Card-based Design**: Tasks and forms presented in clean, rounded cards
+- **Consistent Spacing**: Proper whitespace and padding throughout
+- **Professional Typography**: Inter font family for modern readability
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Color Scheme
+- **Primary**: Blue (#2563eb) for primary actions and branding
+- **Background**: Light gray (#f9fafb) for subtle contrast
+- **Text**: Dark gray for readability
+- **Borders**: Subtle gray borders for separation
 
-3. **Initialize the database**:
-   ```bash
-   python3 app.py
-   ```
+### Components
+- **Task Form**: Centered card with URL input and schedule dropdown
+- **Task Table**: Clean table with status badges and action buttons
+- **Navigation**: Sidebar with active state indicators
+- **Responsive**: Mobile-friendly design with proper breakpoints
 
-## Usage
+## API Integration
 
-### Web Interface
+The frontend is configured to communicate with your existing Flask backend:
 
-1. **Start the Flask application**:
-   ```bash
-   python3 app.py
-   ```
+- **Development**: Proxy requests to `http://localhost:5000`
+- **Production**: Update API endpoints as needed
 
-2. **Open your browser** and navigate to `http://localhost:8080`
+## Customization
 
-3. **Add scraping tasks** through the web interface
+### Adding New Pages
+1. Create a new component in `src/components/`
+2. Add navigation item to `Sidebar.jsx`
+3. Update routing as needed
 
-### Command Line Interface
+### Styling Changes
+- Modify `tailwind.config.js` for theme customization
+- Update `src/index.css` for global styles
+- Use shadcn UI components for consistency
 
-The scraping tool can also be used directly from the command line:
+### Backend Integration
+- Update API endpoints in components
+- Add error handling and loading states
+- Implement real-time updates if needed
 
+## Deployment
+
+### Frontend
 ```bash
-# Navigate to the scrapy directory
-cd scrapy
-
-# Automated workflow (recommended)
-python3 main.py --auto https://example.com
-
-# Individual operations
-python3 main.py --url https://example.com          # Fetch sitemap only
-python3 main.py --compare example.com              # Compare sitemaps
-python3 main.py --scrape-new example.com           # Scrape new URLs
-python3 main.py --pdf batch_name                   # Generate PDF report
-
-# Scheduled monitoring
-python3 main.py --schedule https://example.com --interval 24
+npm run build
+# Deploy the dist/ folder to your hosting service
 ```
 
-### Interactive Mode
-
-```bash
-cd scrapy
-python3 main.py
-```
-
-## API Endpoints
-
-- `GET /` - Main dashboard
-- `POST /add_task` - Add new scraping task
-- `GET /tasks` - View all tasks
-- `GET /api/tasks` - Get tasks as JSON
-- `POST /edit_task/<id>` - Edit existing task
-- `POST /delete_task/<id>` - Delete task
-- `GET /latest_updates` - View latest sitemap updates
-- `GET /test_sitemap/<url>` - Test if URL has sitemap
-
-## Configuration
-
-The application uses SQLite for data storage and includes:
-
-- **scraping_tasks** table: Stores scheduled scraping tasks
-- **sitemap_updates** table: Tracks discovered URL changes
-
-## Dependencies
-
-- **Flask**: Web framework
-- **requests**: HTTP client
-- **beautifulsoup4**: HTML parsing
-- **lxml**: XML processing
-- **reportlab**: PDF generation
-- **schedule**: Task scheduling
-- **readability-lxml**: Content extraction
-
-## Development
-
-### Running Tests
-
-```bash
-python3 -c "from scrapy.main import ScrapingTool; print('Import test successful')"
-```
-
-### Adding New Features
-
-1. Core scraping logic goes in `scrapy/core/`
-2. Utility functions go in `scrapy/utils/`
-3. Web interface changes go in `templates/` and `static/`
+### Backend
+Deploy your existing Flask application as usual.
 
 ## Contributing
 
@@ -153,7 +148,3 @@ python3 -c "from scrapy.main import ScrapingTool; print('Import test successful'
 ## License
 
 This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions, please create an issue in the repository.

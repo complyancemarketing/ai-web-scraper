@@ -28,6 +28,9 @@
                 <a href="{{ url_for('latest_updates') }}" class="nav-item">
                     <i class="fas fa-chart-bar"></i>
                 </a>
+                <a href="{{ url_for('government_dashboard') }}" class="nav-item">
+                    <i class="fas fa-landmark"></i>
+                </a>
                 <a href="{{ url_for('integrated_apps') }}" class="nav-item">
                     <i class="fas fa-plug"></i>
                 </a>
@@ -45,6 +48,63 @@
         <div class="main-content">
             <!-- Analytics Content -->
             <div class="analytics-content">
+                <!-- Add New Task Form Section -->
+                <div class="task-form-section">
+                    <div class="task-form-card">
+                        <div class="card-header">
+                            <h3>Add New AI Scraping Task</h3>
+                            <p>Set up a website and schedule scraping frequency.</p>
+                        </div>
+                        
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form action="{{ url_for('add_task') }}" method="POST" class="task-form">
+                            <div class="form-group">
+                                <label for="url">
+                                    <i class="fas fa-globe"></i>
+                                    Website URL
+                                </label>
+                                <input 
+                                    type="url" 
+                                    id="url" 
+                                    name="url" 
+                                    placeholder="https://example.com"
+                                    required
+                                    class="form-input"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="schedule">
+                                    <i class="fas fa-clock"></i>
+                                    AI Scraping Schedule
+                                </label>
+                                <select id="schedule" name="schedule" required class="form-input">
+                                    <option value="">Select frequency</option>
+                                    <option value="daily">Every Day</option>
+                                    <option value="2days">Every 2 Days</option>
+                                    <option value="weekly">Every Week</option>
+                                    <option value="monthly">Every Month</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-plus"></i>
+                                + Add Task
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tasks Table Section -->
                 <div class="analytics-header">
                     <h1>Your AI Tasks</h1>
                     <div class="search-container">

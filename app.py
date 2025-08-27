@@ -596,6 +596,10 @@ def latest_updates():
     
     return render_template('latest_updates.html', updates=updates)
 
+@app.route('/government_dashboard')
+def government_dashboard():
+    return render_template('government_dashboard.html')
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host='0.0.0.0', port=8080) 

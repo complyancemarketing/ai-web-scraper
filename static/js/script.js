@@ -144,6 +144,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Add click handlers for government section
+    document.querySelectorAll('.government-updates-section.clickable-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+    
     // Add click handlers for action buttons
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
