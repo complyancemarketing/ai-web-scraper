@@ -374,6 +374,17 @@
     color: #856404;
 }
 
+.comparison-badge.loading {
+    background: #e2e3e5;
+    color: #495057;
+    animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
 /* Action Buttons */
 .actions-cell {
     display: flex;

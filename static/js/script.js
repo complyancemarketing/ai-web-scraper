@@ -385,6 +385,16 @@ function closeRunAllModal() {
 }
 
 function runAllTasks() {
+    // Show loading indicators for all active tasks
+    const comparisonCells = document.querySelectorAll('td:nth-child(6)'); // Comparison Result column
+    comparisonCells.forEach(cell => {
+        const currentBadge = cell.querySelector('.comparison-badge');
+        if (currentBadge && !currentBadge.classList.contains('error')) {
+            currentBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            currentBadge.className = 'comparison-badge loading';
+        }
+    });
+
     // Send run all request
     fetch('/run_all_tasks', {
         method: 'POST',
@@ -401,17 +411,87 @@ function runAllTasks() {
         if (data.success) {
             showAlert('✅ All active tasks started successfully!', 'success');
             closeRunAllModal();
-            // Reload the page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            
+            // Start polling for updates instead of immediate reload
+            startPollingForUpdates();
         } else {
             showAlert('❌ Error running tasks: ' + (data.error || 'Unknown error'), 'error');
+            // Reset loading indicators on error
+            resetLoadingIndicators();
         }
     })
     .catch(error => {
         console.error('Error running all tasks:', error);
         showAlert('❌ Error running tasks. Please try again.', 'error');
+        // Reset loading indicators on error
+        resetLoadingIndicators();
+    });
+}
+
+function resetLoadingIndicators() {
+    const loadingCells = document.querySelectorAll('.comparison-badge.loading');
+    loadingCells.forEach(cell => {
+        cell.innerHTML = '<i class="fas fa-clock"></i> Not checked';
+        cell.className = 'comparison-badge not-checked';
+    });
+}
+
+function startPollingForUpdates() {
+    const pollInterval = setInterval(() => {
+        fetch('/api/tasks')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.tasks) {
+                updateComparisonResults(data.tasks);
+                
+                // Check if all tasks are done (no more loading indicators)
+                const stillLoading = document.querySelectorAll('.comparison-badge.loading');
+                if (stillLoading.length === 0) {
+                    clearInterval(pollInterval);
+                    showAlert('✅ All sitemap comparisons completed!', 'success');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error polling for updates:', error);
+            clearInterval(pollInterval);
+        });
+    }, 3000); // Poll every 3 seconds
+
+    // Stop polling after 5 minutes to prevent infinite polling
+    setTimeout(() => {
+        clearInterval(pollInterval);
+    }, 300000);
+}
+
+function updateComparisonResults(tasks) {
+    const rows = document.querySelectorAll('.tasks-table tbody tr');
+    
+    tasks.forEach((task, index) => {
+        if (index < rows.length) {
+            const comparisonCell = rows[index].querySelector('td:nth-child(6)');
+            const badge = comparisonCell.querySelector('.comparison-badge');
+            
+            if (badge && badge.classList.contains('loading')) {
+                const comparison_result = task[9] || "Not checked";
+                
+                // Update the badge based on the result
+                if (comparison_result.includes("new URLs found") || comparison_result.includes("modified URLs found")) {
+                    badge.innerHTML = `<i class="fas fa-plus-circle"></i> ${comparison_result}`;
+                    badge.className = 'comparison-badge new-urls';
+                } else if (comparison_result === "No update") {
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> No update';
+                    badge.className = 'comparison-badge no-update';
+                } else if (comparison_result === "Error") {
+                    badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                    badge.className = 'comparison-badge error';
+                } else if (comparison_result !== "Not checked") {
+                    // Still processing or other status
+                    badge.innerHTML = `<i class="fas fa-clock"></i> ${comparison_result}`;
+                    badge.className = 'comparison-badge not-checked';
+                }
+            }
+        }
     });
 }
 
