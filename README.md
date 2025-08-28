@@ -10,6 +10,7 @@ A modern, professional web application for AI-powered web scraping with a clean 
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **Government Dashboard**: Specialized monitoring for government websites
 - **Integrated Apps**: Connect with external services like Google Drive and N8N
+- **Automatic Sitemap Management**: Automatically deletes old sitemaps after comparison to maintain clean storage
 
 ## Tech Stack
 
@@ -101,6 +102,25 @@ ai-web-scraper/
 - **Task Table**: Clean table with status badges and action buttons
 - **Navigation**: Sidebar with active state indicators
 - **Responsive**: Mobile-friendly design with proper breakpoints
+
+## Sitemap Management
+
+### Automatic Sitemap Deletion
+The system now automatically manages sitemap storage to prevent accumulation of old files:
+
+1. **Initial Sitemap**: When you add a new URL, the system fetches and stores the initial sitemap
+2. **Comparison Process**: When you run the "Run All" button, the system:
+   - Fetches the current sitemap from the website
+   - Compares it with the previously stored sitemap
+   - **Automatically deletes the old sitemap** after comparison
+   - Keeps only the new sitemap for future comparisons
+3. **Storage Efficiency**: This ensures only one sitemap file per domain is maintained
+
+### Benefits
+- **Clean Storage**: No accumulation of old sitemap files
+- **Automatic Management**: No manual cleanup required
+- **Consistent Comparisons**: Always compares with the most recent previous sitemap
+- **Storage Optimization**: Reduces disk space usage over time
 
 ## API Integration
 

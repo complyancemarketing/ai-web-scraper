@@ -1,17 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-import sqlite3
-from datetime import datetime
 import os
 import sys
+import sqlite3
 import threading
-import subprocess
+import time
+from datetime import datetime
+from urllib.parse import urlparse
+
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 
 # Add the scrapy directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'scrapy'))
 
 # Import scrapy components
 from scrapy.main import ScrapingTool
-from scrapy.core.config import Config
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -22,6 +23,30 @@ def get_scraping_tool():
     # Set the scrapy base directory to the scrapy folder
     scrapy_dir = os.path.join(os.path.dirname(__file__), 'scrapy')
     return ScrapingTool(base_dir=scrapy_dir)
+
+def format_timestamp(timestamp_str, format_type='date'):
+    """Format timestamp string for display"""
+    if not timestamp_str:
+        return 'N/A' if format_type == 'date' else 'Never'
+    
+    try:
+        # Try ISO format first (with T and microseconds)
+        if 'T' in timestamp_str:
+            dt = datetime.fromisoformat(timestamp_str.replace('T', ' '))
+        else:
+            # Fall back to standard format
+            dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+        
+        if format_type == 'date':
+            return dt.strftime('%d-%m-%Y')
+        elif format_type == 'datetime':
+            formatted_date = dt.strftime('%d-%m-%Y')
+            formatted_time = dt.strftime('%I:%M%p').lower()
+            return f"{formatted_date} / {formatted_time}"
+        else:
+            return timestamp_str
+    except:
+        return timestamp_str[:10] if timestamp_str else ('N/A' if format_type == 'date' else 'Never')
 
 # Database initialization
 def init_db():
@@ -132,11 +157,11 @@ def add_task():
         
         if sitemap_success:
             # Get sitemap count for tracking
-            from urllib.parse import urlparse
             domain = urlparse(url).netloc
             initial_count = scraping_tool.get_latest_sitemap_url_count(domain)
             
             print(f"✅ Initial sitemap fetched successfully! Found {initial_count} URLs")
+            print(f"📁 Initial sitemap stored for future comparison")
             flash(f'Task added successfully! Initial sitemap fetched with {initial_count} URLs.', 'success')
             
             # Step 2: Store the task in database with sitemap info
@@ -185,34 +210,10 @@ def tasks():
         task_list = list(task)
         
         # Format created_at (task[3])
-        if task[3]:
-            from datetime import datetime
-            try:
-                # Try ISO format first (with T and microseconds)
-                if 'T' in task[3]:
-                    dt = datetime.fromisoformat(task[3].replace('T', ' '))
-                else:
-                    # Fall back to standard format
-                    dt = datetime.strptime(task[3], '%Y-%m-%d %H:%M:%S')
-                task_list[3] = dt.strftime('%d-%m-%Y')
-            except:
-                task_list[3] = task[3][:10] if task[3] else 'N/A'
+        task_list[3] = format_timestamp(task[3], 'date')
         
         # Format last_run (task[4]) 
-        if task[4]:
-            from datetime import datetime
-            try:
-                # Try ISO format first (with T and microseconds)
-                if 'T' in task[4]:
-                    dt = datetime.fromisoformat(task[4].replace('T', ' '))
-                else:
-                    # Fall back to standard format
-                    dt = datetime.strptime(task[4], '%Y-%m-%d %H:%M:%S')
-                formatted_date = dt.strftime('%d-%m-%Y')
-                formatted_time = dt.strftime('%I:%M%p').lower()
-                task_list[4] = f"{formatted_date} / {formatted_time}"
-            except:
-                task_list[4] = task[4][:10] if task[4] else 'Never'
+        task_list[4] = format_timestamp(task[4], 'datetime')
         
         tasks.append(tuple(task_list))
     
@@ -232,34 +233,10 @@ def api_tasks():
         task_list = list(task)
         
         # Format created_at (task[3])
-        if task[3]:
-            from datetime import datetime
-            try:
-                # Try ISO format first (with T and microseconds)
-                if 'T' in task[3]:
-                    dt = datetime.fromisoformat(task[3].replace('T', ' '))
-                else:
-                    # Fall back to standard format
-                    dt = datetime.strptime(task[3], '%Y-%m-%d %H:%M:%S')
-                task_list[3] = dt.strftime('%d-%m-%Y')
-            except:
-                task_list[3] = task[3][:10] if task[3] else 'N/A'
+        task_list[3] = format_timestamp(task[3], 'date')
         
         # Format last_run (task[4]) 
-        if task[4]:
-            from datetime import datetime
-            try:
-                # Try ISO format first (with T and microseconds)
-                if 'T' in task[4]:
-                    dt = datetime.fromisoformat(task[4].replace('T', ' '))
-                else:
-                    # Fall back to standard format
-                    dt = datetime.strptime(task[4], '%Y-%m-%d %H:%M:%S')
-                formatted_date = dt.strftime('%d-%m-%Y')
-                formatted_time = dt.strftime('%I:%M%p').lower()
-                task_list[4] = f"{formatted_date} / {formatted_time}"
-            except:
-                task_list[4] = task[4][:10] if task[4] else 'Never'
+        task_list[4] = format_timestamp(task[4], 'datetime')
         
         tasks.append(tuple(task_list))
     
@@ -328,8 +305,12 @@ def run_all_tasks():
         batch_results_lock = threading.Lock()
         
         # Function to fetch sitemap and compare for a single task
-        def process_single_task(task_id, task_url):
+        def process_single_task(task_id, task_url, task_index, total_tasks):
             try:
+                print(f"\n{'='*60}")
+                print(f"PROCESSING TASK {task_index}/{total_tasks}: {task_url}")
+                print(f"{'='*60}")
+                
                 # Get scraping tool instance
                 tool = get_scraping_tool()
                 
@@ -338,11 +319,10 @@ def run_all_tasks():
                 tool.configure_teams_notifications(enabled=True)
                 
                 # Extract domain from URL
-                from urllib.parse import urlparse
                 domain = urlparse(task_url).netloc
                 
                 # Step 1: Fetch current sitemap
-                print(f"Fetching sitemap for {task_url}...")
+                print(f"📥 Step 1: Fetching sitemap for {task_url}...")
                 sitemap_fetched = tool.fetch_sitemap(task_url)
                 
                 result_text = "Error fetching sitemap"
@@ -355,8 +335,9 @@ def run_all_tasks():
                 }
                 
                 if sitemap_fetched:
-                    # Step 2: Compare with previous sitemap
-                    print(f"Comparing sitemaps for {domain}...")
+                    # Step 2: Compare with previous sitemap (old sitemap will be automatically deleted after comparison)
+                    print(f"🔍 Step 2: Comparing sitemaps for {domain}...")
+                    print(f"Note: Old sitemap will be automatically deleted after comparison")
                     comparison_result = tool.compare_sitemaps(domain)
                     
                     # The comparison automatically stores new URLs in sitemap_updates table
@@ -398,9 +379,13 @@ def run_all_tasks():
                 cursor.execute('UPDATE scraping_tasks SET comparison_result = ? WHERE id = ?', (result_text, task_id))
                 conn.commit()
                 conn.close()
+                
+                print(f"✅ Task {task_index}/{total_tasks} completed for {domain}")
                     
             except Exception as e:
-                print(f"Error processing task for {task_url}: {e}")
+                print(f"❌ Error processing task {task_index}/{total_tasks} for {task_url}: {e}")
+                import traceback
+                traceback.print_exc()
                 
                 # Add error result to batch collection
                 with batch_results_lock:
@@ -422,13 +407,24 @@ def run_all_tasks():
                 except:
                     pass
         
-        # Start all tasks in separate threads
-        threads = []
-        for task_id, task_url in active_tasks:
-            thread = threading.Thread(target=process_single_task, args=(task_id, task_url))
-            thread.daemon = True  # Dies when main program exits
-            thread.start()
-            threads.append(thread)
+        # Process tasks sequentially to handle load properly
+        print(f"\n🚀 Starting sequential processing of {len(active_tasks)} tasks...")
+        print(f"📊 Processing one task at a time to ensure stability and proper sitemap deletion")
+        
+        for index, (task_id, task_url) in enumerate(active_tasks, 1):
+            print(f"\n🔄 Processing task {index}/{len(active_tasks)}...")
+            
+            try:
+                process_single_task(task_id, task_url, index, len(active_tasks))
+            except Exception as e:
+                print(f"❌ Unexpected error in task {index}: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # Add a small delay between tasks to prevent overwhelming servers
+            if index < len(active_tasks):
+                print(f"⏳ Waiting 2 seconds before next task...")
+                time.sleep(2)
         
         # Update last_run for all active tasks
         conn = sqlite3.connect('scraping_scheduler.db')
@@ -438,13 +434,9 @@ def run_all_tasks():
         conn.commit()
         conn.close()
         
-        # Start a background thread to wait for completion and send batch notification
+        # Send batch notification after sequential processing
         def send_batch_notification():
             try:
-                # Wait for all threads to complete (with timeout)
-                for thread in threads:
-                    thread.join(timeout=300)  # 5 minutes timeout per thread
-                
                 # Send batch Teams notification if there are results
                 if batch_results:
                     from scrapy.core.teams_notifier import TeamsNotifier
@@ -464,17 +456,18 @@ def run_all_tasks():
             except Exception as e:
                 print(f"Error in batch notification: {e}")
         
-        # Start the batch notification thread
-        notification_thread = threading.Thread(target=send_batch_notification)
-        notification_thread.daemon = True
-        notification_thread.start()
+        # Send batch notification immediately after sequential processing
+        send_batch_notification()
         
         return jsonify({
             'success': True, 
-            'message': f'Started sitemap checking for {len(active_tasks)} active tasks successfully. Teams notification will be sent when complete.'
+            'message': f'Started sequential sitemap checking for {len(active_tasks)} active tasks. Processing one task at a time for stability. Teams notification sent.'
         })
         
     except Exception as e:
+        print(f"❌ Error in run_all_tasks: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': f'Error running tasks: {str(e)}'})
 
 @app.route('/delete_all_updates', methods=['POST'])
@@ -561,6 +554,8 @@ def update_workflow_app_last_run(app_name: str):
     except Exception as e:
         print(f"❌ Error updating last run time for {app_name}: {e}")
 
+
+
 @app.route('/latest_updates')
 def latest_updates():
     conn = sqlite3.connect('scraping_scheduler.db')
@@ -578,7 +573,6 @@ def latest_updates():
     updates = []
     for update in updates_raw:
         # Parse the timestamp and format it as "26-08-2025 / 4:55pm"
-        from datetime import datetime
         try:
             # Try ISO format first (with T and microseconds)
             if 'T' in update[3]:

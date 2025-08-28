@@ -46,11 +46,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Show loading state
+            // Show loading state with enhanced messaging
             const submitBtn = this.querySelector('.submit-btn');
             if (submitBtn) {
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Task...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching Sitemap...';
                 submitBtn.disabled = true;
+                
+                // Show a loading message to the user
+                showAlert('🔄 Fetching sitemap and setting up task...', 'info');
             }
             
             console.log('Form submitting with:', {
@@ -87,40 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Test sitemap functionality
-    window.testSitemap = function() {
-        const urlInput = document.getElementById('url');
-        if (!urlInput || !urlInput.value.trim()) {
-            showAlert('Please enter a URL first', 'error');
-            return;
-        }
-        
-        const testBtn = document.getElementById('test-sitemap-btn');
-        if (testBtn) {
-            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
-            testBtn.disabled = true;
-        }
-        
-        const url = urlInput.value.trim();
-        fetch(`/test_sitemap/${encodeURIComponent(url)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert(`✅ ${data.message}`, 'success');
-                } else {
-                    showAlert(`❌ ${data.message}`, 'warning');
-                }
-            })
-            .catch(error => {
-                showAlert(`❌ Error testing sitemap: ${error.message}`, 'error');
-            })
-            .finally(() => {
-                if (testBtn) {
-                    testBtn.innerHTML = '<i class="fas fa-search"></i> Test Sitemap';
-                    testBtn.disabled = false;
-                }
-            });
-    };
+
     
     // Add hover effects to feature cards
     const featureCards = document.querySelectorAll('.feature-card');
@@ -395,15 +365,31 @@ function closeRunAllModal() {
 }
 
 function runAllTasks() {
+    // Show loading state for the Run All button
+    const runAllBtn = document.querySelector('.run-all-btn');
+    if (runAllBtn) {
+        const originalText = runAllBtn.innerHTML;
+        runAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Tasks...';
+        runAllBtn.disabled = true;
+        
+        // Store original text to restore later
+        runAllBtn.setAttribute('data-original-text', originalText);
+    }
+    
     // Show loading indicators for all active tasks
     const comparisonCells = document.querySelectorAll('td:nth-child(6)'); // Comparison Result column
     comparisonCells.forEach(cell => {
         const currentBadge = cell.querySelector('.comparison-badge');
         if (currentBadge && !currentBadge.classList.contains('error')) {
-            currentBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            currentBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching & Comparing...';
             currentBadge.className = 'comparison-badge loading';
         }
     });
+    
+    // Show a loading message to the user
+    showAlert('🔄 Fetching sitemaps and comparing changes...', 'info');
+    
+    // Note: Old sitemaps will be automatically deleted after comparison to maintain clean storage
 
     // Send run all request
     fetch('/run_all_tasks', {
@@ -444,21 +430,60 @@ function resetLoadingIndicators() {
         cell.innerHTML = '<i class="fas fa-clock"></i> Not checked';
         cell.className = 'comparison-badge not-checked';
     });
+    
+    // Restore Run All button
+    const runAllBtn = document.querySelector('.run-all-btn');
+    if (runAllBtn) {
+        const originalText = runAllBtn.getAttribute('data-original-text');
+        if (originalText) {
+            runAllBtn.innerHTML = originalText;
+            runAllBtn.disabled = false;
+        }
+    }
 }
 
+
+
 function startPollingForUpdates() {
+    let completedTasks = 0;
+    const totalTasks = document.querySelectorAll('.comparison-badge.loading').length;
+    let lastProgressUpdate = 0;
+    
     const pollInterval = setInterval(() => {
         fetch('/api/tasks')
         .then(response => response.json())
         .then(data => {
             if (data.success && data.tasks) {
+                const previousLoadingCount = document.querySelectorAll('.comparison-badge.loading').length;
                 updateComparisonResults(data.tasks);
+                const currentLoadingCount = document.querySelectorAll('.comparison-badge.loading').length;
+                
+                // Track progress
+                if (currentLoadingCount < previousLoadingCount) {
+                    completedTasks = totalTasks - currentLoadingCount;
+                    const progressPercent = Math.round((completedTasks / totalTasks) * 100);
+                    
+                    // Show progress update every 2 completed tasks or when all done
+                    if (completedTasks - lastProgressUpdate >= 2 || currentLoadingCount === 0) {
+                        showAlert(`🔄 Progress: ${completedTasks}/${totalTasks} tasks completed (${progressPercent}%)`, 'info');
+                        lastProgressUpdate = completedTasks;
+                    }
+                }
                 
                 // Check if all tasks are done (no more loading indicators)
-                const stillLoading = document.querySelectorAll('.comparison-badge.loading');
-                if (stillLoading.length === 0) {
+                if (currentLoadingCount === 0) {
                     clearInterval(pollInterval);
                     showAlert('✅ All sitemap comparisons completed!', 'success');
+                    
+                    // Restore Run All button
+                    const runAllBtn = document.querySelector('.run-all-btn');
+                    if (runAllBtn) {
+                        const originalText = runAllBtn.getAttribute('data-original-text');
+                        if (originalText) {
+                            runAllBtn.innerHTML = originalText;
+                            runAllBtn.disabled = false;
+                        }
+                    }
                 }
             }
         })
@@ -466,12 +491,13 @@ function startPollingForUpdates() {
             console.error('Error polling for updates:', error);
             clearInterval(pollInterval);
         });
-    }, 3000); // Poll every 3 seconds
+    }, 2000); // Poll every 2 seconds for faster updates
 
-    // Stop polling after 5 minutes to prevent infinite polling
+    // Stop polling after 10 minutes to prevent infinite polling
     setTimeout(() => {
         clearInterval(pollInterval);
-    }, 300000);
+        showAlert('⚠️ Polling stopped after 10 minutes. Check task status manually.', 'warning');
+    }, 600000);
 }
 
 function updateComparisonResults(tasks) {
