@@ -796,6 +796,17 @@
     animation: spin 1s linear infinite;
 }
 
+/* Loading state for submit button */
+.submit-btn.loading {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.submit-btn.loading:hover {
+    background: #6c757d;
+    transform: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .analytics-layout {

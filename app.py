@@ -89,6 +89,18 @@ def init_db():
         )
     ''')
     
+    # Create government_sites table for government dashboard
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS government_sites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT NOT NULL,
+            schedule TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_check TIMESTAMP,
+            status TEXT DEFAULT 'active'
+        )
+    ''')
+    
     # Insert default workflow apps if they don't exist
     default_apps = [
         ('Webhook', 'Send data to external services via HTTP requests'),
@@ -194,7 +206,7 @@ def add_task():
         traceback.print_exc()
         flash(f'Error adding task: {str(e)}', 'error')
     
-    return redirect(url_for('index'))
+    return redirect(url_for('tasks'))
 
 @app.route('/tasks')
 def tasks():
@@ -592,7 +604,87 @@ def latest_updates():
 
 @app.route('/government_dashboard')
 def government_dashboard():
-    return render_template('government_dashboard.html')
+    """Display government dashboard with existing government sites"""
+    conn = sqlite3.connect('scraping_scheduler.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, url, schedule, created_at, last_check, status 
+        FROM government_sites 
+        ORDER BY created_at DESC
+    ''')
+    government_sites = cursor.fetchall()
+    conn.close()
+    
+    # Format the timestamps
+    formatted_sites = []
+    for site in government_sites:
+        try:
+            # Format created_at using the same function as tasks page
+            formatted_created = format_timestamp(site[3], 'date')
+            
+            # Format last_check
+            if site[4]:
+                if 'T' in site[4]:
+                    dt = datetime.fromisoformat(site[4].replace('T', ' '))
+                else:
+                    dt = datetime.strptime(site[4], '%Y-%m-%d %H:%M:%S')
+                formatted_last_check = dt.strftime('%d-%m-%Y')
+            else:
+                formatted_last_check = 'Never'
+            
+            # Create new tuple with formatted timestamps
+            formatted_site = (site[0], site[1], site[2], formatted_created, formatted_last_check, site[5])
+            formatted_sites.append(formatted_site)
+        except:
+            # If parsing fails, use the original data
+            formatted_sites.append(site)
+    
+    return render_template('government_dashboard.html', government_sites=formatted_sites)
+
+@app.route('/add_government_site', methods=['POST'])
+def add_government_site():
+    """Add a new government site to the government_sites table"""
+    try:
+        url = request.form.get('url')
+        schedule = request.form.get('schedule')
+        
+        if not url or not schedule:
+            flash('URL and schedule are required', 'error')
+            return redirect(url_for('government_dashboard'))
+        
+        # Add to government_sites table (separate from scraping_tasks)
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO government_sites (url, schedule, created_at, status)
+            VALUES (?, ?, ?, ?)
+        ''', (url, schedule, datetime.now().isoformat(), 'active'))
+        conn.commit()
+        conn.close()
+        
+        flash('Government site added successfully!', 'success')
+        return redirect(url_for('government_dashboard'))
+        
+    except Exception as e:
+        flash(f'Error adding government site: {str(e)}', 'error')
+        return redirect(url_for('government_dashboard'))
+
+@app.route('/delete_all_government_sites', methods=['GET'])
+def delete_all_government_sites():
+    """Delete all government sites from the government_sites table"""
+    try:
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM government_sites')
+        conn.commit()
+        conn.close()
+        
+        flash('All government sites deleted successfully!', 'success')
+        return redirect(url_for('government_dashboard'))
+        
+    except Exception as e:
+        flash(f'Error deleting all government sites: {str(e)}', 'error')
+        return redirect(url_for('government_dashboard'))
 
 if __name__ == '__main__':
     init_db()

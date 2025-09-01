@@ -611,8 +611,23 @@ function deleteAllUpdates() {
     });
 }
 
-// Additional safety: prevent any default behavior on delete buttons
+// Task form loading functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle task form submission with loading state
+    const taskForm = document.querySelector('.task-form');
+    if (taskForm) {
+        taskForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('.submit-btn');
+            if (submitBtn) {
+                // Change button to loading state
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching Sitemap...';
+                submitBtn.disabled = true;
+                submitBtn.classList.add('loading');
+            }
+        });
+    }
+    
+    // Additional safety: prevent any default behavior on delete buttons
     const deleteButtons = document.querySelectorAll('.delete-btn');
     deleteButtons.forEach(button => {
         button.addEventListener('click', function(e) {

@@ -25,11 +25,11 @@
                 <a href="{{ url_for('tasks') }}" class="nav-item">
                     <i class="fas fa-list"></i>
                 </a>
-                <a href="{{ url_for('latest_updates') }}" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
-                </a>
                 <a href="{{ url_for('government_dashboard') }}" class="nav-item active">
                     <i class="fas fa-landmark"></i>
+                </a>
+                <a href="{{ url_for('latest_updates') }}" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
                 </a>
                 <a href="{{ url_for('integrated_apps') }}" class="nav-item">
                     <i class="fas fa-plug"></i>
@@ -48,96 +48,247 @@
         <div class="main-content">
             <!-- Analytics Content -->
             <div class="analytics-content">
+                <!-- Add New Task Form Section -->
+                <div class="task-form-section">
+                    <div class="task-form-card">
+                        <div class="card-header">
+                            <h3>Add a Website to Monitor</h3>
+                            <p>Set up a website and schedule scraping frequency.</p>
+                        </div>
+                        
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form action="{{ url_for('add_government_site') }}" method="POST" class="task-form">
+                            <div class="form-group">
+                                <label for="url">
+                                    <i class="fas fa-globe"></i>
+                                    Website URL
+                                </label>
+                                <input 
+                                    type="url" 
+                                    id="url" 
+                                    name="url" 
+                                    placeholder="https://example.com"
+                                    required
+                                    class="form-input"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="schedule">
+                                    <i class="fas fa-clock"></i>
+                                    AI Scraping Schedule
+                                </label>
+                                <select id="schedule" name="schedule" required class="form-input">
+                                    <option value="">Select frequency</option>
+                                    <option value="daily">Every Day</option>
+                                    <option value="2days">Every 2 Days</option>
+                                    <option value="weekly">Every Week</option>
+                                    <option value="monthly">Every Month</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-plus"></i>
+                                Add Task
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="analytics-header">
                     <h1>Government Website Dashboard</h1>
-                    <p>Monitor and track government website updates and compliance changes</p>
-                </div>
-
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-globe"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Total Government Sites</h3>
-                            <p class="stat-number">0</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Last Updated</h3>
-                            <p class="stat-number">Never</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Critical Updates</h3>
-                            <p class="stat-number">0</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Compliance Status</h3>
-                            <p class="stat-number">100%</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="government-sites-container">
-                    <div class="section-header">
-                        <h2>Government Websites</h2>
-                        <button class="add-site-btn">
-                            <i class="fas fa-plus"></i>
-                            Add Government Site
+                    <div class="search-container">
+                        <button class="run-all-btn" onclick="confirmRunAllGovernment()">
+                            <i class="fas fa-play"></i>
+                            Run All
+                        </button>
+                        <button class="delete-all-btn" onclick="confirmDeleteAllGovernment()">
+                            <i class="fas fa-trash"></i>
+                            Delete All
                         </button>
                     </div>
-                    
-                    <div class="sites-table-container">
-                        <table class="tasks-table">
-                            <thead>
+                </div>
+
+                <div class="tasks-table-container">
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Website</th>
+                                <th>Schedule</th>
+                                <th>Last Check</th>
+                                <th>Created</th>
+                                <th>Updates</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if government_sites %}
+                                {% for site in government_sites %}
                                 <tr>
-                                    <th>Website</th>
-                                    <th>Department</th>
-                                    <th>Last Check</th>
-                                    <th>Status</th>
-                                    <th>Updates</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="empty-state">
-                                    <td colspan="6">
-                                        <div class="empty-message">
-                                            <i class="fas fa-landmark"></i>
-                                            <h3>No Government Websites Added</h3>
-                                            <p>Start monitoring government websites by adding your first site.</p>
-                                            <button class="btn-primary">
-                                                <i class="fas fa-plus"></i>
-                                                Add First Site
+                                    <td>
+                                        <div class="url-cell">
+                                            <i class="fas fa-globe"></i>
+                                            <span>{{ site[1][:50] }}{% if site[1]|length > 50 %}...{% endif %}</span>
+                                        </td>
+                                    <td>
+                                        <span class="schedule-badge {% if site[2] == 'daily' %}daily{% elif site[2] == 'weekly' %}weekly{% elif site[2] == 'monthly' %}monthly{% else %}daily{% endif %}">
+                                            <i class="fas fa-calendar"></i>
+                                            {% if site[2] == 'daily' %}
+                                                Daily
+                                            {% elif site[2] == '2days' %}
+                                                Every 2 Days
+                                            {% elif site[2] == 'weekly' %}
+                                                Weekly
+                                            {% elif site[2] == 'monthly' %}
+                                                Monthly
+                                            {% else %}
+                                                {{ site[2] }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="date-cell">
+                                            <i class="fas fa-clock"></i>
+                                            <span>{{ site[4] if site[4] else 'Never' }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="date-cell">
+                                            <i class="fas fa-calendar"></i>
+                                            <span>{{ site[3] if site[3] else 'N/A' }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="updates-cell">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Pending</span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="actions-cell">
+                                            <button class="action-btn edit-btn" onclick="editSite({{ site[0] }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="action-btn delete-btn" onclick="deleteSite({{ site[0] }})">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="empty-table-message">
+                                    <td colspan="6">
+                                        <div class="empty-table-content">
+                                            <i class="fas fa-landmark"></i>
+                                            <h3>No Government Websites Added</h3>
+                                            <p>Start monitoring government websites by adding your first site.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Run All Government Sites Confirmation Modal -->
+    <div id="runAllGovernmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-play"></i> Run All Government Sites</h2>
+                <span class="close" onclick="closeRunAllGovernmentModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to run ALL government site monitoring tasks?</p>
+                <p style="color: #27ae60; font-weight: bold;">This will start monitoring all government websites.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeRunAllGovernmentModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="run-btn" onclick="runAllGovernment()">
+                    <i class="fas fa-play"></i> Run All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Government Sites Confirmation Modal -->
+    <div id="deleteAllGovernmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trash"></i> Delete All Government Sites</h2>
+                <span class="close" onclick="closeDeleteAllGovernmentModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete ALL government sites?</p>
+                <p style="color: #e74c3c; font-weight: bold;">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeDeleteAllGovernmentModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="delete-btn" onclick="deleteAllGovernment()">
+                    <i class="fas fa-trash"></i> Delete All
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    
+    <script>
+        // Run All Government Sites Modal Functions
+        function confirmRunAllGovernment() {
+            document.getElementById('runAllGovernmentModal').style.display = 'block';
+        }
+        
+        function closeRunAllGovernmentModal() {
+            document.getElementById('runAllGovernmentModal').style.display = 'none';
+        }
+        
+        function runAllGovernment() {
+            // Close modal
+            closeRunAllGovernmentModal();
+            
+            // Show success message
+            alert('Running all government site monitoring tasks...');
+            // TODO: Implement actual run all functionality
+        }
+        
+        // Delete All Government Sites Modal Functions
+        function confirmDeleteAllGovernment() {
+            document.getElementById('deleteAllGovernmentModal').style.display = 'block';
+        }
+        
+        function closeDeleteAllGovernmentModal() {
+            document.getElementById('deleteAllGovernmentModal').style.display = 'none';
+        }
+        
+        function deleteAllGovernment() {
+            // Close modal and redirect to delete endpoint
+            closeDeleteAllGovernmentModal();
+            window.location.href = "{{ url_for('delete_all_government_sites') }}";
+        }
+        
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html> 
