@@ -196,6 +196,24 @@ def check_gov_py_base_urls(url: str) -> str:
     print(f"❌ No matching gov.py base URL found for: {url}")
     return None
 
+def get_country_from_url(url: str) -> str:
+    """
+    Get the country name from a government URL
+    Returns the country name or 'Unknown'
+    """
+    gov_base_urls = {
+        "https://einvoice.belgium.be": "Belgium",
+        "https://www.impots.gouv.fr": "France", 
+        "https://ksef.podatki.gov.pl": "Poland",
+        "https://www.imda.gov.sg": "Singapore"
+    }
+    
+    for base_url, country in gov_base_urls.items():
+        if url.startswith(base_url):
+            return country
+    
+    return "Unknown"
+
 def collect_links_to_xml(base_url: str):
     """Collect links for a base_url using specialized government scrapers via gov_backend collector, return (xml_path, count)."""
     try:
@@ -1123,6 +1141,8 @@ def run_all_government():
                     conn.commit()
                     conn.close()
                     
+
+                    
                     results.append({
                         'id': site_id,
                         'url': site_url,
@@ -1159,6 +1179,34 @@ def run_all_government():
         collection_status['current_step'] = "Collection completed successfully!"
         collection_status['progress'] = 100
         collection_status['is_running'] = False
+        
+        # Send batch Teams notification summarizing all results
+        try:
+            from scrapy.core.teams_notifier import TeamsNotifier
+            notifier = TeamsNotifier()
+            
+            # Prepare batch summary
+            batch_results = []
+            for result in results:
+                if result['ok']:
+                    country = get_country_from_url(result['url'])
+                    batch_results.append({
+                        'domain': result['url'],
+                        'country': country,
+                        'has_changes': result['updates_found'] > 0,
+                        'updates_found': result['updates_found']
+                    })
+            
+            # Send batch notification
+            if batch_results:
+                notifier.send_batch_summary(batch_results)
+                print(f"📱 Batch Teams notification sent for {len(batch_results)} government sites")
+                
+                # Update workflow app last run time
+                update_workflow_app_last_run('Microsoft Teams')
+                
+        except Exception as e:
+            print(f"⚠️ Failed to send batch Teams notification: {e}")
         
         return jsonify({
             'success': True,

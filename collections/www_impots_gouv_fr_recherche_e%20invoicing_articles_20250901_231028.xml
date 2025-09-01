@@ -5,42 +5,42 @@
     <country>France</country>
     <domain>www.impots.gouv.fr/recherche/e%20invoicing</domain>
     <total_urls>5</total_urls>
-    <crawled_at>2025-09-01T20:07:29.828833</crawled_at>
+    <crawled_at>2025-09-01T23:10:28.812484</crawled_at>
     <scraper_source>gov.py (fast HTTP method)</scraper_source>
   </metadata>
   <urls>
     <url>
-      <loc>https://www.impots.gouv.fr/actualite/facturation-electronique-le-service-dimmatriculation-des-plateformes-de-dematerialisation</loc>
-      <title>Article</title>
-      <lastmod>2025-09-01T20:07:29.828840</lastmod>
-      <changefreq>weekly</changefreq>
-      <priority>0.8</priority>
-    </url>
-    <url>
       <loc>https://www.impots.gouv.fr/facturation-electronique-et-plateformes-partenaires</loc>
       <title>Article</title>
-      <lastmod>2025-09-01T20:07:29.828843</lastmod>
+      <lastmod>2025-09-01T23:10:28.812490</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
     <url>
       <loc>https://www.impots.gouv.fr/e-invoicing-la-facturation-eleectronique</loc>
       <title>Article</title>
-      <lastmod>2025-09-01T20:07:29.828850</lastmod>
+      <lastmod>2025-09-01T23:10:28.812494</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+    <url>
+      <loc>https://www.impots.gouv.fr/actualite/facturation-electronique-le-service-dimmatriculation-des-plateformes-de-dematerialisation</loc>
+      <title>Article</title>
+      <lastmod>2025-09-01T23:10:28.812497</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
     <url>
       <loc>https://www.impots.gouv.fr/liste-des-plateformes-de-dematerialisation-partenaires-pdp-immatriculees-sous-reserve</loc>
       <title>Article</title>
-      <lastmod>2025-09-01T20:07:29.828853</lastmod>
+      <lastmod>2025-09-01T23:10:28.812500</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
     <url>
       <loc>https://www.impots.gouv.fr/actualite/chorus-pro-restera-la-plateforme-de-reference-pour-la-facturation-electronique-du-secteur</loc>
       <title>Article</title>
-      <lastmod>2025-09-01T20:07:29.828856</lastmod>
+      <lastmod>2025-09-01T23:10:28.812503</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
