@@ -14,50 +14,34 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="logo-text">
-                        <h1>AI Web Scraper</h1>
-                        <p>Powered by Complyance</p>
-                    </div>
+                    <i class="fas fa-robot"></i>
                 </div>
             </div>
             
             <nav class="sidebar-nav">
-                <ul class="nav-list">
-                    <li class="nav-item active">
-                        <a href="{{ url_for('index') }}" class="nav-link">
-                            <i class="fas fa-home"></i>
-                            <span>Home</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('tasks') }}" class="nav-link">
-                            <i class="fas fa-list"></i>
-                            <span>Sitemap Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('government_dashboard') }}" class="nav-link">
-                            <i class="fas fa-landmark"></i>
-                            <span>Government Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('latest_updates') }}" class="nav-link">
-                            <i class="fas fa-bell"></i>
-                            <span>Latest Updates</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('integrated_apps') }}" class="nav-link">
-                            <i class="fas fa-plug"></i>
-                            <span>Integrated Apps</span>
-                        </a>
-                    </li>
-                </ul>
+                <a href="{{ url_for('index') }}" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                </a>
+                <a href="{{ url_for('tasks') }}" class="nav-item">
+                    <i class="fas fa-list"></i>
+                </a>
+                <a href="{{ url_for('government_dashboard') }}" class="nav-item">
+                    <i class="fas fa-landmark"></i>
+                </a>
+                <a href="{{ url_for('latest_updates') }}" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                </a>
+                <a href="{{ url_for('integrated_apps') }}" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                </a>
             </nav>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Log out
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content -->
