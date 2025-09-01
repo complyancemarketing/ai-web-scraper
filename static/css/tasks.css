@@ -4,7 +4,7 @@
 .analytics-layout {
     display: flex;
     min-height: 100vh;
-    background: #f8f9fa;
+    background: white;
     width: 100vw;
     overflow-x: hidden;
 }
@@ -12,7 +12,7 @@
 /* Sidebar */
 .sidebar {
     width: 80px;
-    background: #1a1a2e;
+    background: white;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,6 +21,7 @@
     height: 100vh;
     left: 0;
     top: 0;
+    border-right: 1px solid #e5e7eb;
 }
 
 .sidebar-header {
@@ -53,20 +54,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #8a8a8a;
+    color: #6b7280;
     text-decoration: none;
     transition: all 0.3s ease;
     position: relative;
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: #f3f4f6;
+    color: #2563eb;
 }
 
 .nav-item.active {
-    background: #667eea;
-    color: white;
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .nav-item.active::before {
@@ -93,7 +94,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #8a8a8a;
+    color: #6b7280;
     background: none;
     border: none;
     cursor: pointer;
@@ -222,7 +223,7 @@
 }
 
 .tasks-table th {
-    background: #f8f9fa;
+    background: white;
     padding: 16px 20px;
     text-align: left;
     font-weight: 600;
@@ -585,7 +586,7 @@
 .task-info {
     margin-bottom: 20px;
     padding: 16px;
-    background: #f8f9fa;
+    background: white;
     border-radius: 8px;
     border-left: 4px solid #667eea;
 }
