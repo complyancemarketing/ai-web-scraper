@@ -1226,6 +1226,87 @@ def get_collection_status():
     global collection_status
     return jsonify(collection_status)
 
+@app.route('/update_government_site/<int:site_id>', methods=['POST'])
+def update_government_site(site_id):
+    """Update a government site's schedule"""
+    try:
+        data = request.get_json()
+        new_schedule = data.get('schedule')
+        
+        if not new_schedule:
+            return jsonify({'success': False, 'message': 'Schedule is required'})
+        
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE government_sites 
+            SET schedule = ? 
+            WHERE id = ?
+        ''', (new_schedule, site_id))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Site not found'})
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Site updated successfully'})
+        
+    except Exception as e:
+        print(f"❌ Error updating government site: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/delete_government_site/<int:site_id>', methods=['POST'])
+def delete_government_site(site_id):
+    """Delete a government site"""
+    try:
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        
+        # Get the site URL before deleting for cleanup
+        cursor.execute('SELECT url FROM government_sites WHERE id = ?', (site_id,))
+        site_data = cursor.fetchone()
+        
+        if not site_data:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Site not found'})
+        
+        site_url = site_data[0]
+        
+        # Delete the site from database
+        cursor.execute('DELETE FROM government_sites WHERE id = ?', (site_id,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Site not found'})
+        
+        conn.commit()
+        conn.close()
+        
+        # Clean up any associated collection files
+        try:
+            from urllib.parse import urlparse
+            domain = urlparse(site_url).netloc
+            domain_clean = domain.replace('.', '_')
+            
+            collections_dir = "collections"
+            if os.path.exists(collections_dir):
+                for filename in os.listdir(collections_dir):
+                    if filename.startswith(domain_clean):
+                        file_path = os.path.join(collections_dir, filename)
+                        os.remove(file_path)
+                        print(f"🗑️ Deleted collection file: {file_path}")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not clean up collection files: {e}")
+        
+        return jsonify({'success': True, 'message': 'Site deleted successfully'})
+        
+    except Exception as e:
+        print(f"❌ Error deleting government site: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
 
 
 if __name__ == '__main__':

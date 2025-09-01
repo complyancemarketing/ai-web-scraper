@@ -365,6 +365,9 @@ function closeRunAllModal() {
 }
 
 function runAllTasks() {
+    // Close the modal immediately when Run All is clicked
+    closeRunAllModal();
+    
     // Show loading state for the Run All button
     const runAllBtn = document.querySelector('.run-all-btn');
     if (runAllBtn) {
@@ -406,7 +409,6 @@ function runAllTasks() {
         console.log('Run all response data:', data);
         if (data.success) {
             showAlert('✅ All active tasks started successfully!', 'success');
-            closeRunAllModal();
             
             // Start polling for updates instead of immediate reload
             startPollingForUpdates();
