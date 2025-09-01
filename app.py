@@ -13,6 +13,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'scrapy'))
 
 # Import scrapy components
 from scrapy.main import ScrapingTool
+from scrapy.core.collector import WebsiteCollector
+# Government scrapers are now accessed through gov_backend/collector.py
+# This provides a cleaner separation and redirects to gov.py for specialized scraping
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -139,8 +142,229 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # Column already exists
     
+            # Add comparison_result column to government_sites table if it doesn't exist
+        try:
+            cursor.execute('ALTER TABLE government_sites ADD COLUMN comparison_result TEXT DEFAULT "NOT CHECKED"')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        # Reset all existing comparison_result values to "NOT CHECKED" to ensure clean state
+        try:
+            cursor.execute('UPDATE government_sites SET comparison_result = "NOT CHECKED"')
+        except sqlite3.OperationalError:
+            pass  # Column might not exist yet
+    
     conn.commit()
     conn.close()
+
+def _load_gov_collector():
+    """Dynamically load the consolidated government collector."""
+    try:
+        import importlib.util
+        base_dir = os.path.dirname(__file__)
+        collector_path = os.path.join(base_dir, 'scrapy', 'code ', 'gov_backend', 'collector.py')
+        spec = importlib.util.spec_from_file_location('gov_backend_collector', collector_path)
+        if spec and spec.loader:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+            return mod
+    except Exception as e:
+        print(f"❌ Failed to load consolidated collector: {e}")
+        import traceback
+        traceback.print_exc()
+    return None
+
+def check_gov_py_base_urls(url: str) -> str:
+    """
+    Check if the URL matches any base URLs in gov.py
+    Returns the matching base URL or None
+    """
+    # Base URLs from gov.py ScraperConfig
+    gov_base_urls = {
+        "https://einvoice.belgium.be": "Belgium",
+        "https://www.impots.gouv.fr": "France", 
+        "https://ksef.podatki.gov.pl": "Poland",
+        "https://www.imda.gov.sg": "Singapore"
+    }
+    
+    # Check if the URL starts with any of the base URLs
+    for base_url, country in gov_base_urls.items():
+        if url.startswith(base_url):
+            print(f"🎯 Found matching gov.py base URL: {base_url} ({country})")
+            return base_url
+    
+    print(f"❌ No matching gov.py base URL found for: {url}")
+    return None
+
+def collect_links_to_xml(base_url: str):
+    """Collect links for a base_url using specialized government scrapers via gov_backend collector, return (xml_path, count)."""
+    try:
+        print(f"🔄 Starting government collection for: {base_url}")
+        
+        # First, check if this URL matches any base URLs in gov.py
+        matching_base_url = check_gov_py_base_urls(base_url)
+        
+        if matching_base_url:
+            print(f"✅ URL matches gov.py base URL: {matching_base_url}")
+            print(f"🎯 Using specialized gov.py scraper for this URL")
+            
+            # Try to use the specialized government backend collector first
+            try:
+                # Import the government backend collector
+                import sys
+                import os
+                gov_backend_path = os.path.join(os.path.dirname(__file__), 'scrapy', 'code ', 'gov_backend')
+                sys.path.append(gov_backend_path)
+                
+                from collector import collect_links_to_xml as gov_collect_links
+                
+                print(f"🔄 Redirecting to gov.py for specialized scraping...")
+                xml_path, count = gov_collect_links(base_url)
+                
+                if xml_path and count > 0:
+                    print(f"✅ Government Backend Collection completed: {count} URLs saved to {xml_path}")
+                    return xml_path, count
+                else:
+                    print(f"⚠️ Government Backend Collector failed, falling back to generic collector")
+                    
+            except Exception as e:
+                print(f"⚠️ Government Backend Collector not available: {e}")
+                print(f"🔄 Falling back to generic collector")
+        else:
+            print(f"🌐 URL does not match any gov.py base URLs, using generic collector")
+        
+        # Fallback to generic collector for unknown government sites or if specialized collector fails
+        print(f"🌐 Using generic collector for: {base_url}")
+        collector = WebsiteCollector(output_dir="collections")
+        collection_data = collector.collect_and_save(base_url, max_pages=300)
+        
+        if collection_data['total_urls'] > 0 and collection_data.get('files', {}).get('xml'):
+            xml_path = collection_data['files']['xml']
+            count = collection_data['total_urls']
+            print(f"✅ Generic collection completed: {count} URLs saved to {xml_path}")
+            return xml_path, count
+        else:
+            print(f"❌ Generic collection failed for: {base_url}")
+            return None, 0
+        
+    except Exception as e:
+        print(f"❌ Error during collection: {e}")
+        import traceback
+        traceback.print_exc()
+        return None, 0
+
+def compare_and_find_updates(site_url: str, new_xml_path: str) -> list:
+    """Compare new XML data with previous data and find new/updated URLs"""
+    try:
+        from urllib.parse import urlparse
+        import xml.etree.ElementTree as ET
+        
+        domain = urlparse(site_url).netloc
+        domain_clean = domain.replace('.', '_')
+        
+        # Find previous XML files for this domain
+        collections_dir = "collections"
+        if not os.path.exists(collections_dir):
+            return []
+        
+        previous_files = []
+        for filename in os.listdir(collections_dir):
+            if (filename.startswith(domain_clean) and 
+                filename.endswith('.xml') and 
+                filename != os.path.basename(new_xml_path)):
+                previous_files.append(os.path.join(collections_dir, filename))
+        
+        if not previous_files:
+            print(f"📝 No previous data found for {domain}, marking all URLs as new")
+            # Parse new XML and mark all URLs as new
+            tree = ET.parse(new_xml_path)
+            root = tree.getroot()
+            new_urls = []
+            for url_elem in root.findall('.//url'):
+                loc_elem = url_elem.find('loc')
+                if loc_elem is not None:
+                    new_urls.append({
+                        'domain': domain,
+                        'new_url': loc_elem.text,
+                        'discovered_at': datetime.now().isoformat(),
+                        'comparison_file': new_xml_path
+                    })
+            return new_urls
+        
+        # Find the most recent previous file
+        previous_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        previous_xml_path = previous_files[0]
+        
+        print(f"🔄 Comparing new data with previous: {os.path.basename(previous_xml_path)}")
+        
+        # Parse both XML files
+        new_tree = ET.parse(new_xml_path)
+        new_root = new_tree.getroot()
+        
+        previous_tree = ET.parse(previous_xml_path)
+        previous_root = previous_tree.getroot()
+        
+        # Extract URLs from both files
+        new_urls = set()
+        for url_elem in new_root.findall('.//url'):
+            loc_elem = url_elem.find('loc')
+            if loc_elem is not None:
+                new_urls.add(loc_elem.text)
+        
+        previous_urls = set()
+        for url_elem in previous_root.findall('.//url'):
+            loc_elem = url_elem.find('loc')
+            if loc_elem is not None:
+                previous_urls.add(loc_elem.text)
+        
+        # Find new URLs
+        new_urls_only = new_urls - previous_urls
+        
+        print(f"📊 Comparison results for {domain}:")
+        print(f"   Previous URLs: {len(previous_urls)}")
+        print(f"   New URLs: {len(new_urls)}")
+        print(f"   New URLs only: {len(new_urls_only)}")
+        
+        # Create update records
+        updates = []
+        for new_url in new_urls_only:
+            updates.append({
+                'domain': domain,
+                'new_url': new_url,
+                'discovered_at': datetime.now().isoformat(),
+                'comparison_file': new_xml_path
+            })
+        
+        return updates
+        
+    except Exception as e:
+        print(f"❌ Error comparing data for {site_url}: {e}")
+        return []
+
+def store_updates_in_database(updates: list):
+    """Store updates in the sitemap_updates table"""
+    try:
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        
+        for update in updates:
+            cursor.execute('''
+                INSERT INTO sitemap_updates (domain, new_url, discovered_at, comparison_file, is_read)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                update['domain'],
+                update['new_url'],
+                update['discovered_at'],
+                update['comparison_file'],
+                False
+                    ))
+        
+        conn.commit()
+        conn.close()
+        print(f"💾 Stored {len(updates)} updates in database")
+        
+    except Exception as e:
+        print(f"❌ Error storing updates in database: {e}")
 
 @app.route('/')
 def index():
@@ -607,12 +831,21 @@ def government_dashboard():
     """Display government dashboard with existing government sites"""
     conn = sqlite3.connect('scraping_scheduler.db')
     cursor = conn.cursor()
+    
+    # First, ensure all sites have comparison_result set to "NOT CHECKED" if not already set
     cursor.execute('''
-        SELECT id, url, schedule, created_at, last_check, status 
+        UPDATE government_sites 
+        SET comparison_result = "NOT CHECKED" 
+        WHERE comparison_result IS NULL OR comparison_result = ""
+    ''')
+    
+    cursor.execute('''
+        SELECT id, url, schedule, created_at, last_check, status, comparison_result 
         FROM government_sites 
         ORDER BY created_at DESC
     ''')
     government_sites = cursor.fetchall()
+    conn.commit()
     conn.close()
     
     # Format the timestamps
@@ -632,8 +865,26 @@ def government_dashboard():
             else:
                 formatted_last_check = 'Never'
             
-            # Create new tuple with formatted timestamps
-            formatted_site = (site[0], site[1], site[2], formatted_created, formatted_last_check, site[5])
+            # Handle comparison status based on comparison_result column
+            comparison_result = site[6] if len(site) > 6 else "NOT CHECKED"
+            
+            if comparison_result == "NOT CHECKED" or comparison_result is None:
+                status_display = '<span class="status-badge not-checked"><i class="fas fa-exclamation-triangle"></i> NOT CHECKED</span>'
+            elif "new URLs found" in comparison_result:
+                # Extract the number and show it
+                import re
+                match = re.search(r'(\d+) new URLs found', comparison_result)
+                if match:
+                    number = match.group(1)
+                    status_display = f'<span class="status-badge checked"><i class="fas fa-plus-circle"></i> {number} NEW LINKS</span>'
+                else:
+                    status_display = '<span class="status-badge checked"><i class="fas fa-plus-circle"></i> NEW LINKS FOUND</span>'
+            elif "No changes detected" in comparison_result:
+                status_display = '<span class="status-badge checked"><i class="fas fa-check"></i> NO UPDATE</span>'
+            else:
+                status_display = '<span class="status-badge checked"><i class="fas fa-info-circle"></i> ' + comparison_result + '</span>'
+            
+            formatted_site = (site[0], site[1], site[2], formatted_created, formatted_last_check, status_display)
             formatted_sites.append(formatted_site)
         except:
             # If parsing fails, use the original data
@@ -655,19 +906,124 @@ def add_government_site():
         # Add to government_sites table (separate from scraping_tasks)
         conn = sqlite3.connect('scraping_scheduler.db')
         cursor = conn.cursor()
+        now_iso = datetime.now().isoformat()
         cursor.execute('''
-            INSERT INTO government_sites (url, schedule, created_at, status)
-            VALUES (?, ?, ?, ?)
-        ''', (url, schedule, datetime.now().isoformat(), 'active'))
+            INSERT INTO government_sites (url, schedule, created_at, status, comparison_result)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (url, schedule, now_iso, 'active', 'NOT CHECKED'))
+        site_id = cursor.lastrowid
         conn.commit()
         conn.close()
+
+        # Start collection process in background thread
+        def collect_website_data():
+            try:
+                print(f"🔄 Starting collection for new website: {url}")
+                xml_path, url_count = collect_links_to_xml(url)
+                
+                if xml_path and url_count > 0:
+                    print(f"✅ Collection completed for {url}: {url_count} URLs")
+                    # Update last_check to indicate collection is complete
+                    conn = sqlite3.connect('scraping_scheduler.db')
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE government_sites 
+                        SET last_check = ?
+                        WHERE id = ?
+                    ''', (datetime.now().isoformat(), site_id))
+                    conn.commit()
+                    conn.close()
+                    print(f"📝 Site {url} added successfully with {url_count} URLs")
+                else:
+                    print(f"❌ Collection failed for {url}")
+            except Exception as e:
+                print(f"❌ Error in background collection for {url}: {e}")
         
-        flash('Government site added successfully!', 'success')
-        return redirect(url_for('government_dashboard'))
+        # Start collection in background
+        collection_thread = threading.Thread(target=collect_website_data)
+        collection_thread.daemon = True
+        collection_thread.start()
+        
+        # Return JSON response instead of redirect to keep loading state
+        return jsonify({
+            'success': True,
+            'message': 'Website added successfully! Collection process started in background.',
+            'site_id': site_id
+        })
         
     except Exception as e:
         flash(f'Error adding government site: {str(e)}', 'error')
         return redirect(url_for('government_dashboard'))
+
+@app.route('/check_collection_status/<int:site_id>')
+def check_collection_status(site_id):
+    """Check the collection status for a specific site"""
+    try:
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT url, last_check, status FROM government_sites WHERE id = ?
+        ''', (site_id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            url, last_check, status = result
+            
+            # If last_check is set, collection is complete
+            if last_check:
+                return jsonify({
+                    'status': 'completed',
+                    'last_check': last_check,
+                    'message': 'Collection completed successfully'
+                })
+            
+            # Check if collection files exist in collections directory
+            import os
+            from urllib.parse import urlparse
+            
+            domain = urlparse(url).netloc
+            domain_clean = domain.replace('.', '_')
+            
+            collections_dir = "collections"
+            if os.path.exists(collections_dir):
+                # Look for XML files for this domain
+                for filename in os.listdir(collections_dir):
+                    if (filename.startswith(domain_clean) and 
+                        filename.endswith('.xml')):
+                        # Found collection file, mark as completed
+                        conn = sqlite3.connect('scraping_scheduler.db')
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            UPDATE government_sites 
+                            SET last_check = ?
+                            WHERE id = ?
+                        ''', (datetime.now().isoformat(), site_id))
+                        conn.commit()
+                        conn.close()
+                        
+                        return jsonify({
+                            'status': 'completed',
+                            'last_check': datetime.now().isoformat(),
+                            'message': 'Collection completed successfully (detected by file)'
+                        })
+            
+            # Still in progress
+            return jsonify({
+                'status': 'in_progress',
+                'message': 'Collection in progress...'
+            })
+        else:
+            return jsonify({
+                'status': 'not_found',
+                'message': 'Site not found'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error checking status: {str(e)}'
+        })
 
 @app.route('/delete_all_government_sites', methods=['GET'])
 def delete_all_government_sites():
@@ -685,6 +1041,151 @@ def delete_all_government_sites():
     except Exception as e:
         flash(f'Error deleting all government sites: {str(e)}', 'error')
         return redirect(url_for('government_dashboard'))
+
+# Global status tracking for real-time updates
+collection_status = {
+    'current_site': None,
+    'current_step': None,
+    'progress': 0,
+    'total_sites': 0,
+    'completed_sites': 0,
+    'is_running': False
+}
+
+@app.route('/run_all_government', methods=['POST'])
+def run_all_government():
+    """Collect links for all active government sites, compare with previous data, and update latest updates."""
+    global collection_status
+    
+    try:
+        # Reset status
+        collection_status = {
+            'current_site': None,
+            'current_step': None,
+            'progress': 0,
+            'total_sites': 0,
+            'completed_sites': 0,
+            'is_running': True
+        }
+        
+        # Import the new comparator
+        from government_link_comparator import GovernmentLinkComparator
+        
+        # Initialize the comparator
+        comparator = GovernmentLinkComparator()
+        
+        # Get all government sites
+        conn = sqlite3.connect('scraping_scheduler.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT url FROM government_sites')
+        sites = cursor.fetchall()
+        conn.close()
+        
+        collection_status['total_sites'] = len(sites)
+        
+        # Process all sites with status updates
+        results = []
+        total_updates = 0
+        
+        for i, (site_url,) in enumerate(sites):
+            collection_status['current_site'] = site_url
+            collection_status['current_step'] = f"Processing site {i+1}/{len(sites)}"
+            collection_status['progress'] = (i / len(sites)) * 100
+            
+            try:
+                # Update status for collection
+                collection_status['current_step'] = f"🔄 Redirecting to gov.py for {site_url}"
+                
+                # Process the site
+                result = comparator.process_site(site_url)
+                
+                if result['success']:
+                    # Get the site ID from database
+                    conn = sqlite3.connect('scraping_scheduler.db')
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT id FROM government_sites WHERE url = ?', (site_url,))
+                    site_data = cursor.fetchone()
+                    conn.close()
+                    
+                    site_id = site_data[0] if site_data else 0
+                    updates_found = result.get('updates_found', 0)
+                    total_updates += updates_found
+                    
+                    # Update database with comparison results
+                    conn = sqlite3.connect('scraping_scheduler.db')
+                    cursor = conn.cursor()
+                    
+                    if updates_found > 0:
+                        comparison_result = f"{updates_found} new URLs found"
+                    else:
+                        comparison_result = "No changes detected"
+                    
+                    cursor.execute('''
+                        UPDATE government_sites 
+                        SET last_check = ?,
+                            comparison_result = ?
+                        WHERE url = ?
+                    ''', (datetime.now().isoformat(), comparison_result, site_url))
+                    
+                    conn.commit()
+                    conn.close()
+                    
+                    results.append({
+                        'id': site_id,
+                        'url': site_url,
+                        'ok': True,
+                        'count': result.get('url_count', 0),
+                        'xml': result.get('xml_path'),
+                        'updates_found': updates_found
+                    })
+                else:
+                    results.append({
+                        'id': 0,
+                        'url': site_url,
+                        'ok': False,
+                        'count': 0,
+                        'xml': None,
+                        'updates_found': 0
+                    })
+                
+                collection_status['completed_sites'] = i + 1
+                collection_status['progress'] = ((i + 1) / len(sites)) * 100
+                
+            except Exception as e:
+                print(f"❌ Error processing site {site_url}: {e}")
+                results.append({
+                    'id': 0,
+                    'url': site_url,
+                    'ok': False,
+                    'count': 0,
+                    'xml': None,
+                    'updates_found': 0
+                })
+        
+        # Final status update
+        collection_status['current_step'] = "Collection completed successfully!"
+        collection_status['progress'] = 100
+        collection_status['is_running'] = False
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total_updates': total_updates
+        })
+        
+    except Exception as e:
+        collection_status['is_running'] = False
+        collection_status['current_step'] = f"Error: {str(e)}"
+        print(f"❌ Error in run_all_government: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/collection_status')
+def get_collection_status():
+    """Get the current collection status for real-time updates"""
+    global collection_status
+    return jsonify(collection_status)
+
+
 
 if __name__ == '__main__':
     init_db()

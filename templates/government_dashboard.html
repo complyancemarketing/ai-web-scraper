@@ -7,6 +7,57 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .loading-indicator {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin-top: 10px;
+            color: #6c757d;
+        }
+        
+        .loading-indicator i {
+            margin-right: 8px;
+            color: #007bff;
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-badge.not-checked {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-badge.checked {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+
+        
+        .loading-indicator.success {
+            background-color: #d4edda !important;
+            color: #155724 !important;
+            border-color: #c3e6cb !important;
+        }
+    </style>
 </head>
 <body>
     <div class="analytics-layout">
@@ -96,10 +147,14 @@
                                 </select>
                             </div>
 
-                            <button type="submit" class="submit-btn">
+                            <button type="submit" class="submit-btn" id="submitBtn">
                                 <i class="fas fa-plus"></i>
                                 Add Task
                             </button>
+                            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Adding website to dashboard...
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -126,14 +181,14 @@
                                 <th>Schedule</th>
                                 <th>Last Check</th>
                                 <th>Created</th>
-                                <th>Updates</th>
+                                <th>Comparison Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% if government_sites %}
                                 {% for site in government_sites %}
-                                <tr>
+                                <tr data-site-id="{{ site[0] }}">
                                     <td>
                                         <div class="url-cell">
                                             <i class="fas fa-globe"></i>
@@ -168,10 +223,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="updates-cell">
-                                            <i class="fas fa-info-circle"></i>
-                                            <span>Pending</span>
-                                        </span>
+                                        {{ site[5] | safe }}
                                     </td>
                                     <td>
                                         <div class="actions-cell">
@@ -212,7 +264,7 @@
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to run ALL government site monitoring tasks?</p>
-                <p style="color: #27ae60; font-weight: bold;">This will start monitoring all government websites.</p>
+                <p style="color: #27ae60; font-weight: bold;">This will crawl all government websites, collect new links, and compare with previous data to find updates.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="cancel-btn" onclick="closeRunAllGovernmentModal()">
@@ -250,6 +302,133 @@
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     
     <script>
+        // Form submission handling
+        document.querySelector('.task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const form = this;
+            
+            // Show loading state
+            submitBtn.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+            
+            // Submit form via AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Website added successfully, now wait for collection to complete
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Collection in progress... Please wait...';
+                    
+                    // Start monitoring collection status
+                    monitorCollectionStatus(data.site_id, loadingIndicator, submitBtn, form);
+                } else {
+                    throw new Error(data.message || 'Form submission failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Reset form and show error
+                submitBtn.style.display = 'block';
+                loadingIndicator.style.display = 'none';
+                alert('Error adding website. Please try again.');
+            });
+        });
+        
+        // Monitor collection status until completion
+        function monitorCollectionStatus(siteId, loadingIndicator, submitBtn, form) {
+            let checkCount = 0;
+            let maxChecks = 20; // Maximum 20 checks (60 seconds total)
+            
+            const checkStatus = () => {
+                checkCount++;
+                
+                // Update loading message to show progress
+                if (checkCount === 1) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting collection process...';
+                } else if (checkCount === 2) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Crawling website pages...';
+                } else if (checkCount === 3) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Collecting links and metadata...';
+                } else if (checkCount === 4) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing and saving data...';
+                } else if (checkCount === 5) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizing collection...';
+                } else if (checkCount > 5) {
+                    loadingIndicator.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Still processing... (${checkCount * 3}s)`;
+                }
+                
+                // Check if we've exceeded maximum checks
+                if (checkCount >= maxChecks) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Collection taking longer than expected. Please refresh the page.';
+                    loadingIndicator.style.background = '#fff3cd';
+                    loadingIndicator.style.color = '#856404';
+                    loadingIndicator.style.borderColor = '#ffeaa7';
+                    
+                    // Show refresh button
+                    setTimeout(() => {
+                        submitBtn.style.display = 'block';
+                        submitBtn.innerHTML = '<i class="fas fa-refresh"></i> Refresh Page';
+                        submitBtn.onclick = () => window.location.reload();
+                    }, 3000);
+                    return;
+                }
+                
+                fetch(`/check_collection_status/${siteId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'completed') {
+                            // Collection completed successfully
+                            loadingIndicator.innerHTML = '<i class="fas fa-check"></i> Collection completed! Redirecting...';
+                            loadingIndicator.style.background = '#d4edda';
+                            loadingIndicator.style.color = '#155724';
+                            loadingIndicator.style.borderColor = '#c3e6cb';
+                            
+                            // Redirect to dashboard after 2 seconds
+                            setTimeout(() => {
+                                window.location.href = '/government_dashboard';
+                            }, 2000);
+                        } else if (data.status === 'in_progress') {
+                            // Still collecting, check again in 3 seconds
+                            setTimeout(checkStatus, 3000);
+                        } else {
+                            // Error or unknown status
+                            throw new Error(data.message || 'Unknown collection status');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking status:', error);
+                        // Reset form and show error
+                        submitBtn.style.display = 'block';
+                        submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Try Again';
+                        loadingIndicator.style.display = 'none';
+                        alert('Error during collection. Please try again.');
+                    });
+            };
+            
+            // Start checking status
+            checkStatus();
+            
+            // Add a safety timeout - if collection takes too long, show completion anyway
+            setTimeout(() => {
+                if (checkCount < maxChecks) {
+                    loadingIndicator.innerHTML = '<i class="fas fa-check"></i> Collection completed! Redirecting...';
+                    loadingIndicator.style.background = '#d4edda';
+                    loadingIndicator.style.color = '#155724';
+                    loadingIndicator.style.borderColor = '#c3e6cb';
+                    
+                    // Redirect to dashboard after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/government_dashboard';
+                    }, 2000);
+                }
+            }, 45000); // 45 seconds timeout
+        }
         // Run All Government Sites Modal Functions
         function confirmRunAllGovernment() {
             document.getElementById('runAllGovernmentModal').style.display = 'block';
@@ -259,14 +438,181 @@
             document.getElementById('runAllGovernmentModal').style.display = 'none';
         }
         
-        function runAllGovernment() {
-            // Close modal
+        async function runAllGovernment() {
             closeRunAllGovernmentModal();
             
-            // Show success message
-            alert('Running all government site monitoring tasks...');
-            // TODO: Implement actual run all functionality
+            // Show loading state on the Run All button
+            const runAllBtn = document.querySelector('.run-all-btn');
+            const originalText = runAllBtn.innerHTML;
+            runAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+            runAllBtn.disabled = true;
+            
+            // Create status display
+            const statusDiv = document.createElement('div');
+            statusDiv.id = 'collection-status';
+            statusDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 400px;
+                background: white;
+                border: 2px solid #27ae60;
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                z-index: 1000;
+                font-family: Arial, sans-serif;
+            `;
+            statusDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #27ae60;">🔄 Collection Progress</h3>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
+                </div>
+                <div id="status-content">
+                    <div style="margin-bottom: 10px;">
+                        <i class="fas fa-spinner fa-spin"></i> Starting collection...
+                    </div>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                        <div style="font-size: 12px; color: #666;">Progress</div>
+                        <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
+                            <div id="progress-bar" style="background: #27ae60; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <div id="progress-text" style="text-align: center; font-size: 12px; margin-top: 5px;">0%</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(statusDiv);
+            
+            try {
+                // Start the collection process
+                const res = await fetch("{{ url_for('run_all_government') }}", { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Update the comparison status for each site based on results
+                    updateComparisonStatuses(data.results);
+                    
+                    // Show completion message
+                    document.getElementById('status-content').innerHTML = `
+                        <div style="color: #27ae60; text-align: center; padding: 20px;">
+                            <i class="fas fa-check-circle" style="font-size: 24px;"></i>
+                            <div style="margin-top: 10px; font-weight: bold;">Collection completed!</div>
+                            <div style="font-size: 12px; color: #666;">Found ${data.total_updates} new URLs</div>
+                        </div>
+                    `;
+                    
+                    // Remove status display and reload page after 3 seconds
+                    setTimeout(() => {
+                        statusDiv.remove();
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    // Show error
+                    document.getElementById('status-content').innerHTML = `
+                        <div style="color: #e74c3c; text-align: center; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+                            <div style="margin-top: 10px; font-weight: bold;">Collection failed!</div>
+                            <div style="font-size: 12px; color: #666;">${data.message}</div>
+                        </div>
+                    `;
+                    
+                    // Remove status display after 5 seconds
+                    setTimeout(() => {
+                        statusDiv.remove();
+                    }, 5000);
+                }
+                
+                // Restore button
+                runAllBtn.innerHTML = originalText;
+                runAllBtn.disabled = false;
+                
+            } catch (e) {
+                // Show error
+                document.getElementById('status-content').innerHTML = `
+                    <div style="color: #e74c3c; text-align: center; padding:20px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+                        <div style="margin-top: 10px; font-weight: bold;">Collection failed!</div>
+                        <div style="font-size: 12px; color: #666;">Network error</div>
+                    </div>
+                `;
+                
+                // Remove status display after 5 seconds
+                setTimeout(() => {
+                    statusDiv.remove();
+                }, 5000);
+                
+                // Restore button
+                runAllBtn.innerHTML = originalText;
+                runAllBtn.disabled = false;
+            }
+            
+            // Start polling for status updates
+            pollCollectionStatus();
         }
+        
+        function pollCollectionStatus() {
+            const statusContent = document.getElementById('status-content');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            if (!statusContent) return;
+            
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/collection_status');
+                    const status = await response.json();
+                    
+                    if (status.is_running) {
+                        // Update status display
+                        statusContent.innerHTML = `
+                            <div style="margin-bottom: 10px;">
+                                <i class="fas fa-spinner fa-spin"></i> ${status.current_step}
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                                <div style="font-size: 12px; color: #666;">Progress</div>
+                                <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
+                                    <div id="progress-bar" style="background: #27ae60; height: 100%; width: ${status.progress}%; transition: width 0.3s;"></div>
+                                </div>
+                                <div id="progress-text" style="text-align: center; font-size: 12px; margin-top: 5px;">${Math.round(status.progress)}%</div>
+                            </div>
+                            <div style="font-size: 12px; color: #666;">
+                                Site ${status.completed_sites}/${status.total_sites} completed
+                            </div>
+                        `;
+                        
+                        // Update progress bar
+                        if (progressBar) progressBar.style.width = status.progress + '%';
+                        if (progressText) progressText.textContent = Math.round(status.progress) + '%';
+                        
+                    } else {
+                        // Collection finished, stop polling
+                        clearInterval(pollInterval);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 1000); // Poll every second
+        }
+        
+        // Function to update comparison statuses in the UI
+        function updateComparisonStatuses(results) {
+            results.forEach(result => {
+                const row = document.querySelector(`tr[data-site-id="${result.id}"]`);
+                if (row) {
+                    const statusCell = row.querySelector('.updates-cell');
+                    if (statusCell) {
+                        if (result.updates_found > 0) {
+                            statusCell.innerHTML = `<span class="status-badge checked"><i class="fas fa-plus-circle"></i> ${result.updates_found} NEW LINKS</span>`;
+                        } else {
+                            statusCell.innerHTML = '<span class="status-badge checked"><i class="fas fa-check"></i> NO UPDATE</span>';
+                        }
+                    }
+                }
+            });
+        }
+        
+
         
         // Delete All Government Sites Modal Functions
         function confirmDeleteAllGovernment() {
@@ -289,6 +635,8 @@
                 event.target.style.display = 'none';
             }
         }
+        
+
     </script>
 </body>
 </html> 
