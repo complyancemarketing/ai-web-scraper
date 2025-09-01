@@ -855,15 +855,8 @@ def government_dashboard():
             # Format created_at using the same function as tasks page
             formatted_created = format_timestamp(site[3], 'date')
             
-            # Format last_check
-            if site[4]:
-                if 'T' in site[4]:
-                    dt = datetime.fromisoformat(site[4].replace('T', ' '))
-                else:
-                    dt = datetime.strptime(site[4], '%Y-%m-%d %H:%M:%S')
-                formatted_last_check = dt.strftime('%d-%m-%Y')
-            else:
-                formatted_last_check = 'Never'
+            # Format last_check using the same function as tasks page
+            formatted_last_check = format_timestamp(site[4], 'datetime')
             
             # Handle comparison status based on comparison_result column
             comparison_result = site[6] if len(site) > 6 else "NOT CHECKED"

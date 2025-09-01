@@ -179,8 +179,8 @@
                             <tr>
                                 <th>Website</th>
                                 <th>Schedule</th>
-                                <th>Last Check</th>
                                 <th>Created</th>
+                                <th>Last Check</th>
                                 <th>Comparison Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -212,14 +212,14 @@
                                     </td>
                                     <td>
                                         <div class="date-cell">
-                                            <i class="fas fa-clock"></i>
-                                            <span>{{ site[4] if site[4] else 'Never' }}</span>
+                                            <i class="fas fa-calendar"></i>
+                                            <span>{{ site[3] if site[3] else 'N/A' }}</span>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="date-cell">
-                                            <i class="fas fa-calendar"></i>
-                                            <span>{{ site[3] if site[3] else 'N/A' }}</span>
+                                            <i class="fas fa-clock"></i>
+                                            <span>{{ site[4] if site[4] else 'Never' }}</span>
                                         </div>
                                     </td>
                                     <td>
@@ -447,42 +447,6 @@
             runAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
             runAllBtn.disabled = true;
             
-            // Create status display
-            const statusDiv = document.createElement('div');
-            statusDiv.id = 'collection-status';
-            statusDiv.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                width: 400px;
-                background: white;
-                border: 2px solid #27ae60;
-                border-radius: 10px;
-                padding: 20px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-                z-index: 1000;
-                font-family: Arial, sans-serif;
-            `;
-            statusDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; color: #27ae60;">🔄 Collection Progress</h3>
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
-                </div>
-                <div id="status-content">
-                    <div style="margin-bottom: 10px;">
-                        <i class="fas fa-spinner fa-spin"></i> Starting collection...
-                    </div>
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                        <div style="font-size: 12px; color: #666;">Progress</div>
-                        <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
-                            <div id="progress-bar" style="background: #27ae60; height: 100%; width: 0%; transition: width 0.3s;"></div>
-                        </div>
-                        <div id="progress-text" style="text-align: center; font-size: 12px; margin-top: 5px;">0%</div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(statusDiv);
-            
             try {
                 // Start the collection process
                 const res = await fetch("{{ url_for('run_all_government') }}", { method: 'POST' });
@@ -492,34 +456,13 @@
                     // Update the comparison status for each site based on results
                     updateComparisonStatuses(data.results);
                     
-                    // Show completion message
-                    document.getElementById('status-content').innerHTML = `
-                        <div style="color: #27ae60; text-align: center; padding: 20px;">
-                            <i class="fas fa-check-circle" style="font-size: 24px;"></i>
-                            <div style="margin-top: 10px; font-weight: bold;">Collection completed!</div>
-                            <div style="font-size: 12px; color: #666;">Found ${data.total_updates} new URLs</div>
-                        </div>
-                    `;
-                    
-                    // Remove status display and reload page after 3 seconds
+                    // Reload the page to show updated statuses
                     setTimeout(() => {
-                        statusDiv.remove();
                         window.location.reload();
-                    }, 3000);
+                    }, 1000);
                 } else {
-                    // Show error
-                    document.getElementById('status-content').innerHTML = `
-                        <div style="color: #e74c3c; text-align: center; padding: 20px;">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
-                            <div style="margin-top: 10px; font-weight: bold;">Collection failed!</div>
-                            <div style="font-size: 12px; color: #666;">${data.message}</div>
-                        </div>
-                    `;
-                    
-                    // Remove status display after 5 seconds
-                    setTimeout(() => {
-                        statusDiv.remove();
-                    }, 5000);
+                    // Show error in console
+                    console.error('Collection failed:', data.message);
                 }
                 
                 // Restore button
@@ -527,72 +470,13 @@
                 runAllBtn.disabled = false;
                 
             } catch (e) {
-                // Show error
-                document.getElementById('status-content').innerHTML = `
-                    <div style="color: #e74c3c; text-align: center; padding:20px;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
-                        <div style="margin-top: 10px; font-weight: bold;">Collection failed!</div>
-                        <div style="font-size: 12px; color: #666;">Network error</div>
-                    </div>
-                `;
-                
-                // Remove status display after 5 seconds
-                setTimeout(() => {
-                    statusDiv.remove();
-                }, 5000);
+                // Show error in console
+                console.error('Collection failed:', e);
                 
                 // Restore button
                 runAllBtn.innerHTML = originalText;
                 runAllBtn.disabled = false;
             }
-            
-            // Start polling for status updates
-            pollCollectionStatus();
-        }
-        
-        function pollCollectionStatus() {
-            const statusContent = document.getElementById('status-content');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            
-            if (!statusContent) return;
-            
-            const pollInterval = setInterval(async () => {
-                try {
-                    const response = await fetch('/collection_status');
-                    const status = await response.json();
-                    
-                    if (status.is_running) {
-                        // Update status display
-                        statusContent.innerHTML = `
-                            <div style="margin-bottom: 10px;">
-                                <i class="fas fa-spinner fa-spin"></i> ${status.current_step}
-                            </div>
-                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                                <div style="font-size: 12px; color: #666;">Progress</div>
-                                <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
-                                    <div id="progress-bar" style="background: #27ae60; height: 100%; width: ${status.progress}%; transition: width 0.3s;"></div>
-                                </div>
-                                <div id="progress-text" style="text-align: center; font-size: 12px; margin-top: 5px;">${Math.round(status.progress)}%</div>
-                            </div>
-                            <div style="font-size: 12px; color: #666;">
-                                Site ${status.completed_sites}/${status.total_sites} completed
-                            </div>
-                        `;
-                        
-                        // Update progress bar
-                        if (progressBar) progressBar.style.width = status.progress + '%';
-                        if (progressText) progressText.textContent = Math.round(status.progress) + '%';
-                        
-                    } else {
-                        // Collection finished, stop polling
-                        clearInterval(pollInterval);
-                    }
-                    
-                } catch (error) {
-                    console.error('Error polling status:', error);
-                }
-            }, 1000); // Poll every second
         }
         
         // Function to update comparison statuses in the UI
